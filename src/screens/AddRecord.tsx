@@ -20,7 +20,8 @@ export function AddRecord({ id, reminderId, from, presetType }: { id: string | n
   const { data, update, cur } = useStore();
   const existing = id ? data.txns.find((t) => t.id === id) : undefined;
   const reminder = reminderId ? data.reminders?.find((r) => r.id === reminderId) : undefined;
-  const accounts = data.accounts.filter((a) => !a.archived || a.id === existing?.accountId || a.id === existing?.toAccountId);
+  // Only active accounts can be picked; an inactive one stays only on a record that already uses it.
+  const accounts = data.accounts.filter((a) => !a.archived);
   const lastUsedAccount = useMemo(() => [...data.txns].sort((a, b) => b.createdAt - a.createdAt)[0]?.accountId, [data.txns]);
 
   const startAccount =
@@ -316,7 +317,8 @@ export function AddRecord({ id, reminderId, from, presetType }: { id: string | n
       {(sheet === 'acc' || sheet === 'to') && (
         <Sheet title={sheet === 'to' ? 'Transfer to' : 'Choose account'} onClose={() => setSheet(null)}>
           <div className="card list">
-            {accounts
+            {data.accounts
+              .filter((a) => !a.archived)
               .filter((a) => (sheet === 'to' ? a.id !== accountId : true))
               .map((a) => (
                 <button

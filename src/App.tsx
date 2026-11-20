@@ -9,6 +9,10 @@ import { ConfirmHost } from './confirm';
 import { ToastHost } from './toast';
 import { normalize } from './utils';
 import { Reminders } from './screens/Reminders';
+import { Dashboard } from './screens/Dashboard';
+import { Avatar } from './screens/Profile';
+import { useWide } from './charts';
+import { useStore } from './store';
 import { Home } from './screens/Home';
 import { Records } from './screens/Records';
 import { AddRecord } from './screens/AddRecord';
@@ -44,9 +48,18 @@ const NAV: { path: Path; label: string; icon: IconName }[] = [
   { path: 'reports', label: 'Reports', icon: 'pie' },
   { path: 'budgets', label: 'Budgets', icon: 'target' },
 ];
+// Extra items shown only in the wide (web) sidebar.
+const SIDE: { path: Path; label: string; icon: IconName }[] = [
+  { path: 'accounts', label: 'Accounts', icon: 'bank' },
+  { path: 'reminders', label: 'Reminders', icon: 'bell' },
+  { path: 'categories', label: 'Categories', icon: 'tag' },
+  { path: 'settings', label: 'Settings', icon: 'settings' },
+];
 
 function Shell() {
   const { path, params } = useRoute();
+  const wide = useWide();
+  const { data, lock } = useStore();
   const showNav = path !== 'add';
 
   let screen;
@@ -77,10 +90,10 @@ function Shell() {
       screen = <Categories />;
       break;
     default:
-      screen = <Home />;
+      screen = wide ? <Dashboard /> : <Home />;
   }
 
-  const active = ['accounts', 'settings', 'profile', 'categories', 'reminders'].includes(path) ? 'home' : path;
+  const active = wide ? (path === 'profile' ? 'settings' : path) : ['accounts', 'settings', 'profile', 'categories', 'reminders'].includes(path) ? 'home' : path;
   const navItem = (n: (typeof NAV)[number]) => (
     <a key={n.path} className={`item ${active === n.path ? 'on' : ''}`} href={href(n.path)} aria-current={active === n.path ? 'page' : undefined}>
       <Icon name={n.icon} size={22} stroke={1.9} />
@@ -107,6 +120,27 @@ function Shell() {
           </a>
           {navItem(NAV[2])}
           {navItem(NAV[3])}
+          {wide && (
+            <>
+              <span className="side-label">Manage</span>
+              {SIDE.map(navItem)}
+              <div className="side-foot">
+                <a className="side-user" href={href('profile')}>
+                  <Avatar size={36} radius={12} />
+                  <span className="row-main">
+                    <span className="row-title" style={{ fontSize: 13 }}>
+                      {data.settings.name}
+                    </span>
+                    <span className="row-sub">{data.settings.email || 'View profile'}</span>
+                  </span>
+                </a>
+                <button className="side-logout" onClick={lock}>
+                  <Icon name="lock" size={18} />
+                  Log out
+                </button>
+              </div>
+            </>
+          )}
         </nav>
       )}
     </div>

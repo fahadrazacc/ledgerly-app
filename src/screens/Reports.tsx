@@ -114,6 +114,7 @@ export function Reports() {
         </div>
       </div>
 
+      <div className="two-col">
       <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div className="section-head" style={{ gap: 8 }}>
           <h2 className="h2">By category</h2>
@@ -210,6 +211,7 @@ export function Reports() {
           ))}
         </div>
       </section>
+      </div>
     </main>
   );
 }

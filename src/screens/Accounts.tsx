@@ -16,6 +16,7 @@ export function Accounts() {
   const [acc, setAcc] = useState<Account | 'new' | null>(null);
   const [debt, setDebt] = useState<Debt | 'new' | null>(null);
   const [showSettled, setShowSettled] = useState(false);
+  const [reorder, setReorder] = useState(false);
 
   const active = data.accounts.filter((a) => !a.archived);
   const inactive = data.accounts.filter((a) => a.archived);
@@ -30,6 +31,40 @@ export function Accounts() {
     update((d) => ({ ...d, accounts: d.accounts.map((x) => (x.id === a.id ? { ...x, archived: on ? undefined : true } : x)) }));
     toast(on ? `${a.name} is active` : `${a.name} is now inactive`);
   };
+
+  // Move an active account up or down among the active ones (this order is used everywhere).
+  const move = (a: Account, dir: -1 | 1) =>
+    update((d) => {
+      const list = [...d.accounts];
+      const actives = list.filter((x) => !x.archived);
+      const i = actives.findIndex((x) => x.id === a.id);
+      const other = actives[i + dir];
+      if (!other) return d;
+      const ia = list.findIndex((x) => x.id === a.id);
+      const ib = list.findIndex((x) => x.id === other.id);
+      [list[ia], list[ib]] = [list[ib], list[ia]];
+      return { ...d, accounts: list };
+    });
+
+  const reorderRow = (a: Account, i: number) => (
+    <div key={a.id} className="acc-row">
+      <div className="row">
+        <AccountTile account={a} size={42} />
+        <span className="row-main">
+          <span className="row-title" style={{ fontWeight: 700 }}>
+            {a.name}
+          </span>
+          <span className="row-sub">{money(balanceOf(data, a.id), cur)}</span>
+        </span>
+      </div>
+      <button className="btn-icon" aria-label={`Move ${a.name} up`} disabled={i === 0} onClick={() => move(a, -1)} style={i === 0 ? { opacity: 0.35 } : undefined}>
+        <Icon name="chevD" size={20} stroke={2.2} />
+      </button>
+      <button className="btn-icon" aria-label={`Move ${a.name} down`} disabled={i === active.length - 1} onClick={() => move(a, 1)} style={i === active.length - 1 ? { opacity: 0.35 } : undefined}>
+        <Icon name="chevD" size={20} stroke={2.2} />
+      </button>
+    </div>
+  );
 
   const accountRow = (a: Account) => (
     <div key={a.id} className="acc-row" style={a.archived ? { opacity: 0.6 } : undefined}>
@@ -74,11 +109,24 @@ export function Accounts() {
       <section className="section">
         <div className="section-head">
           <h2 className="h2">My accounts</h2>
-          <span className="muted small">Switch = active</span>
+          {active.length > 1 && (
+            <button className="link" onClick={() => setReorder((r) => !r)} aria-pressed={reorder}>
+              {reorder ? 'Done' : 'Reorder'}
+            </button>
+          )}
         </div>
+        {reorder ? (
+          <p className="muted small" style={{ margin: 0 }}>
+            Use the arrows to set the order. It's used on Home and when picking an account.
+          </p>
+        ) : (
+          <p className="muted small" style={{ margin: 0 }}>
+            Tap an account to edit it. The switch makes it active or inactive.
+          </p>
+        )}
         <div className="card list">
           {active.length === 0 && <Empty icon="bank" title="No active accounts" text="Add cash, a bank account or a wallet to start." />}
-          {active.map(accountRow)}
+          {reorder ? active.map(reorderRow) : active.map(accountRow)}
         </div>
         <button className="btn secondary" onClick={() => setAcc('new')}>
           <Icon name="plus" size={18} stroke={2.2} />
