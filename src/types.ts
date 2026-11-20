@@ -17,6 +17,7 @@ export interface Category {
   type: 'expense' | 'income';
   icon: IconName;
   color: string;
+  archived?: boolean;
 }
 
 export interface Txn {
@@ -51,6 +52,10 @@ export interface Debt {
 export interface Settings {
   name: string;
   currency: string;
+  email?: string;
+  phone?: string;
+  photo?: string; // small JPEG data URL, stored inside the encrypted vault
+  hideAmounts?: boolean;
 }
 
 export interface AppData {

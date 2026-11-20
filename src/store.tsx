@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { AppData } from './types';
 import { writeVault, type Session } from './vault';
+import { setMasked } from './utils';
 
 interface Store {
   data: AppData;
@@ -9,6 +10,8 @@ interface Store {
   session: Session;
   setSession: (s: Session) => void;
   cur: string;
+  hidden: boolean;
+  toggleHidden: () => void;
 }
 
 const Ctx = createContext<Store | null>(null);
@@ -33,6 +36,8 @@ export function StoreProvider(props: {
     saving.current = saving.current.then(() => writeVault(session, data)).catch((e) => console.error('Save failed', e));
   }, [data, session]);
 
+  setMasked(!!data.settings.hideAmounts);
+
   const update = useCallback((fn: (d: AppData) => AppData) => setData((d) => fn(d)), []);
 
   // Auto-lock after 5 minutes in the background.
@@ -49,7 +54,18 @@ export function StoreProvider(props: {
   }, []);
 
   return (
-    <Ctx.Provider value={{ data, update, lock: props.onLock, session, setSession, cur: data.settings.currency }}>
+    <Ctx.Provider
+      value={{
+        data,
+        update,
+        lock: props.onLock,
+        session,
+        setSession,
+        cur: data.settings.currency,
+        hidden: !!data.settings.hideAmounts,
+        toggleHidden: () => update((d) => ({ ...d, settings: { ...d.settings, hideAmounts: !d.settings.hideAmounts } })),
+      }}
+    >
       {props.children}
     </Ctx.Provider>
   );

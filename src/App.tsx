@@ -13,6 +13,8 @@ import { Reports } from './screens/Reports';
 import { Budgets } from './screens/Budgets';
 import { Accounts } from './screens/Accounts';
 import { Settings } from './screens/Settings';
+import { Profile } from './screens/Profile';
+import { Categories } from './screens/Categories';
 
 export default function App() {
   const [open, setOpen] = useState<{ session: Session; data: AppData } | null>(null);
@@ -47,7 +49,7 @@ function Shell() {
   let screen;
   switch (path) {
     case 'records':
-      screen = <Records />;
+      screen = <Records key={params.get('account') ?? 'all'} account={params.get('account')} />;
       break;
     case 'add':
       screen = <AddRecord key={params.get('id') ?? 'new'} id={params.get('id')} from={params.get('from') || 'home'} presetType={params.get('type') as RecordType | null} />;
@@ -64,11 +66,17 @@ function Shell() {
     case 'settings':
       screen = <Settings />;
       break;
+    case 'profile':
+      screen = <Profile />;
+      break;
+    case 'categories':
+      screen = <Categories />;
+      break;
     default:
       screen = <Home />;
   }
 
-  const active = path === 'accounts' || path === 'settings' ? 'home' : path;
+  const active = ['accounts', 'settings', 'profile', 'categories'].includes(path) ? 'home' : path;
   const navItem = (n: (typeof NAV)[number]) => (
     <a key={n.path} className={`item ${active === n.path ? 'on' : ''}`} href={href(n.path)} aria-current={active === n.path ? 'page' : undefined}>
       <Icon name={n.icon} size={22} stroke={1.9} />

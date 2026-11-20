@@ -7,8 +7,9 @@ android {
         applicationId "com.ledgerly.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        // Each GitHub build gets a higher version so Android installs it as an update.
+        versionCode (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger() + 100
+        versionName "0.2." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,7 +17,20 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // One fixed key for test builds, so a new APK installs over the old one and keeps its data.
+    // Before a Play Store release, create a private release key and keep it out of the repo.
+    signingConfigs {
+        test {
+            storeFile file("ledgerly-test.keystore")
+            storePassword "ledgerly-test"
+            keyAlias "ledgerly"
+            keyPassword "ledgerly-test"
+        }
+    }
     buildTypes {
+        debug {
+            signingConfig signingConfigs.test
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'

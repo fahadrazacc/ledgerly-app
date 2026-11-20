@@ -150,7 +150,7 @@ function BudgetSheet(props: { budget: Budget | null; onClose: () => void; onSave
   const used = new Set(data.budgets.filter((b) => b.id !== existing?.id).map((b) => b.categoryId ?? 'overall'));
   const options = [
     ...(used.has('overall') ? [] : [{ value: 'overall', label: 'Whole month (all spending)' }]),
-    ...data.categories.filter((c) => c.type === 'expense' && !used.has(c.id)).map((c) => ({ value: c.id, label: c.name })),
+    ...data.categories.filter((c) => c.type === 'expense' && !c.archived && !used.has(c.id)).map((c) => ({ value: c.id, label: c.name })),
   ];
   const [scope, setScope] = useState(props.budget ? props.budget.categoryId ?? 'overall' : options[0]?.value ?? '');
   const [limit, setLimit] = useState(props.budget?.limit ? String(props.budget.limit) : '');

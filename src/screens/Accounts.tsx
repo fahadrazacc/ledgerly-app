@@ -2,6 +2,7 @@ import { ask } from '../confirm';
 import { useState } from 'react';
 import { Icon } from '../icons';
 import { useStore } from '../store';
+import { href } from '../router';
 import { BackLink, accountColor, accountIcon, accountKindLabel, Empty, Header, IconTile, Segmented, Sheet } from '../ui';
 import type { Account, AccountKind, Debt } from '../types';
 import { balanceOf, initials, money, shortDate, toDateInput, totalBalance, uid } from '../utils';
@@ -13,6 +14,7 @@ export function Accounts() {
   const [showSettled, setShowSettled] = useState(false);
 
   const accounts = data.accounts.filter((a) => !a.archived);
+  const inactive = data.accounts.filter((a) => a.archived);
   const open = data.debts.filter((d) => !d.settled);
   const receive = open.filter((d) => d.kind === 'lent').reduce((s, d) => s + d.amount, 0);
   const owe = open.filter((d) => d.kind === 'borrowed').reduce((s, d) => s + d.amount, 0);
@@ -57,6 +59,29 @@ export function Accounts() {
           ))}
         </div>
       </section>
+
+      {inactive.length > 0 && (
+        <section className="section">
+          <h2 className="h2">Inactive accounts</h2>
+          <p className="muted small" style={{ margin: 0 }}>
+            Not counted in your total balance and hidden when adding records. Their history stays in Records.
+          </p>
+          <div className="card list">
+            {inactive.map((a) => (
+              <button key={a.id} className="row" onClick={() => setAcc(a)} style={{ opacity: 0.65 }}>
+                <IconTile icon={accountIcon[a.kind]} color={accountColor[a.kind]} size={42} />
+                <span className="row-main">
+                  <span className="row-title" style={{ fontWeight: 700 }}>
+                    {a.name}
+                  </span>
+                  <span className="row-sub">Inactive · {accountKindLabel[a.kind]}</span>
+                </span>
+                <span className="amt">{money(balanceOf(data, a.id), cur)}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="section">
         <div className="section-head">
@@ -112,7 +137,7 @@ export function Accounts() {
 
       <div className="note">
         <Icon name="lock" size={18} />
-        <span>Your records are encrypted with your PIN before they're saved on this device.</span>
+        <span>Your records are encrypted with your PIN or password before they're saved on this device.</span>
       </div>
 
       {acc && (
@@ -124,10 +149,7 @@ export function Accounts() {
             setAcc(null);
           }}
           onDelete={(id) => {
-            update((d) => {
-              const used = d.txns.some((t) => t.accountId === id || t.toAccountId === id);
-              return { ...d, accounts: used ? d.accounts.map((x) => (x.id === id ? { ...x, archived: true } : x)) : d.accounts.filter((x) => x.id !== id) };
-            });
+            update((d) => ({ ...d, accounts: d.accounts.filter((x) => x.id !== id) }));
             setAcc(null);
           }}
         />
@@ -156,15 +178,19 @@ function AccountSheet(props: { account: Account | null; onClose: () => void; onS
   const [name, setName] = useState(a?.name ?? '');
   const [kind, setKind] = useState<AccountKind>(a?.kind ?? 'bank');
   const [initial, setInitial] = useState(a ? String(a.initial) : '');
+  const [active, setActive] = useState(!a?.archived);
   const [error, setError] = useState('');
   const used = a ? data.txns.some((t) => t.accountId === a.id || t.toAccountId === a.id) : false;
+  const activeCount = data.accounts.filter((x) => !x.archived).length;
 
   const save = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return setError('Give the account a name');
+    if (data.accounts.some((x) => x.id !== a?.id && x.name.toLowerCase() === name.trim().toLowerCase())) return setError('You already have an account with that name');
     const n = Number(initial || 0);
     if (Number.isNaN(n)) return setError('Starting balance must be a number');
-    props.onSave({ id: a?.id ?? uid(), name: name.trim(), kind, initial: n });
+    if (!active && a && !a.archived && activeCount <= 1) return setError('Keep at least one account active');
+    props.onSave({ id: a?.id ?? uid(), name: name.trim(), kind, initial: n, archived: active ? undefined : true });
   };
 
   return (
@@ -172,7 +198,7 @@ function AccountSheet(props: { account: Account | null; onClose: () => void; onS
       <form className="form" onSubmit={save}>
         <label className="field">
           <span>Name</span>
-          <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Meezan current" autoFocus />
+          <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Meezan current" autoFocus={!a} />
         </label>
         <label className="field">
           <span>Type</span>
@@ -193,18 +219,31 @@ function AccountSheet(props: { account: Account | null; onClose: () => void; onS
             Current balance: <strong>{money(balanceOf(data, a.id), cur)}</strong>. Changing the starting balance shifts it by the same amount.
           </span>
         )}
+        <div className="row" style={{ borderBottom: 0, padding: '4px 0' }}>
+          <span className="row-main">
+            <span className="row-title">Active</span>
+            <span className="row-sub">Inactive accounts are left out of your balance and new records</span>
+          </span>
+          <label className="switch">
+            <input type="checkbox" aria-label="Account active" checked={active} onChange={(e) => setActive(e.target.checked)} />
+            <span />
+          </label>
+        </div>
         {error && <div className="error" role="alert">{error}</div>}
         <button className="btn primary block">Save account</button>
-        {a && (
-          <button
-            type="button"
-            className="btn danger block"
-            onClick={async () => (await ask(used ? 'This account has records, so it will be hidden rather than deleted.' : 'Delete this account?', { ok: used ? 'Hide' : 'Delete' })) && props.onDelete(a.id)}
-          >
+        {a && used && (
+          <a className="btn secondary block" href={href(`records?account=${a.id}`)}>
+            <Icon name="list" size={18} />
+            View this account's records
+          </a>
+        )}
+        {a && !used && (
+          <button type="button" className="btn danger block" onClick={async () => (await ask('Delete this account?')) && props.onDelete(a.id)}>
             <Icon name="trash" size={18} />
-            {used ? 'Hide account' : 'Delete account'}
+            Delete account
           </button>
         )}
+        {a && used && <p className="muted small" style={{ margin: 0 }}>This account has records, so it can be made inactive but not deleted.</p>}
       </form>
     </Sheet>
   );

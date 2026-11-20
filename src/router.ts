@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export type Path = 'home' | 'records' | 'add' | 'reports' | 'budgets' | 'accounts' | 'settings';
+export type Path = 'home' | 'records' | 'add' | 'reports' | 'budgets' | 'accounts' | 'settings' | 'profile' | 'categories';
 
 // Normal builds route on the URL hash (#/records), so the Android back button and browser history work.
 // The single-file preview build keeps the route in memory, because its host frame doesn't allow #/paths.

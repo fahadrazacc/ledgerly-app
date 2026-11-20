@@ -8,7 +8,14 @@ export const uid = () =>
 
 const nf = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
 
+// "Hide amounts" privacy mode: every amount shown through money() becomes dots.
+let masked = false;
+export const setMasked = (m: boolean) => {
+  masked = m;
+};
+
 export function money(n: number, cur: string, sign = false) {
+  if (masked) return `${cur} ••••`;
   const s = nf.format(Math.abs(n));
   const prefix = n < 0 ? '−' : sign && n > 0 ? '+' : '';
   return `${prefix}${cur} ${s}`;

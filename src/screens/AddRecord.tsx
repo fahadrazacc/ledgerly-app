@@ -1,6 +1,7 @@
 import { ask } from '../confirm';
 import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '../icons';
+import { CategorySheet } from './Categories';
 import { useStore } from '../store';
 import { go, href } from '../router';
 import { accountColor, accountIcon, CatTile, IconTile, Keypad, Segmented, Sheet } from '../ui';
@@ -22,10 +23,10 @@ export function AddRecord({ id, from, presetType }: { id: string | null; from: s
   const [toAccountId, setToAccountId] = useState(existing?.toAccountId ?? accounts.find((a) => a.id !== (existing?.accountId ?? accounts[0]?.id))?.id ?? '');
   const [date, setDate] = useState(toLocalInput(existing ? new Date(existing.date) : new Date()));
   const [note, setNote] = useState(existing?.note ?? '');
-  const [sheet, setSheet] = useState<null | 'cat' | 'acc' | 'to'>(null);
+  const [sheet, setSheet] = useState<null | 'cat' | 'acc' | 'to' | 'newcat'>(null);
   const [error, setError] = useState('');
 
-  const cats = data.categories.filter((c) => c.type === (type === 'income' ? 'income' : 'expense'));
+  const cats = data.categories.filter((c) => c.type === (type === 'income' ? 'income' : 'expense') && (!c.archived || c.id === categoryId));
   const cat = data.categories.find((c) => c.id === categoryId);
   const acc = data.accounts.find((a) => a.id === accountId);
   const to = data.accounts.find((a) => a.id === toAccountId);
@@ -215,8 +216,30 @@ export function AddRecord({ id, from, presetType }: { id: string | null; from: s
                 {c.name}
               </button>
             ))}
+            <button className="cat-opt" onClick={() => setSheet('newcat')}>
+              <span className="tile" style={{ width: 40, height: 40, background: 'var(--accent-soft)', color: 'var(--accent)' }}>
+                <Icon name="plus" size={20} stroke={2.2} />
+              </span>
+              New
+            </button>
           </div>
+          <a className="btn secondary" href={href('categories')}>
+            Manage categories
+          </a>
         </Sheet>
+      )}
+
+      {sheet === 'newcat' && (
+        <CategorySheet
+          category={null}
+          type={type === 'income' ? 'income' : 'expense'}
+          onClose={() => setSheet('cat')}
+          onSaved={(c) => {
+            setCategoryId(c.id);
+            setError('');
+            setSheet(null);
+          }}
+        />
       )}
 
       {(sheet === 'acc' || sheet === 'to') && (

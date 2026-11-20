@@ -70,14 +70,25 @@ export function hasVault() {
   return !!getItem(VAULT_KEY);
 }
 
-export function pinLength(): number {
-  try {
-    const m = JSON.parse(getItem(META_KEY) || '{}');
-    return typeof m.pinLength === 'number' ? m.pinLength : 4;
-  } catch {
-    return 4;
-  }
+// Non-secret settings the lock screen needs before the vault is open.
+export interface Meta {
+  pinLength: number;
+  kind: 'pin' | 'password';
+  biometric: boolean;
 }
+export function getMeta(): Meta {
+  let m: Partial<Meta> = {};
+  try {
+    m = JSON.parse(getItem(META_KEY) || '{}');
+  } catch {
+    /* ignore */
+  }
+  return { pinLength: typeof m.pinLength === 'number' ? m.pinLength : 4, kind: m.kind === 'password' ? 'password' : 'pin', biometric: !!m.biometric };
+}
+export function setMeta(patch: Partial<Meta>) {
+  setItem(META_KEY, JSON.stringify({ ...getMeta(), ...patch }));
+}
+export const pinLength = () => getMeta().pinLength;
 
 export async function writeVault(session: Session, data: AppData) {
   const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -86,12 +97,22 @@ export async function writeVault(session: Session, data: AppData) {
   setItem(VAULT_KEY, JSON.stringify(blob));
 }
 
-export async function createVault(pin: string, data: AppData): Promise<Session> {
+export async function createVault(pass: string, data: AppData, kind: 'pin' | 'password' = 'pin'): Promise<Session> {
   const salt = crypto.getRandomValues(new Uint8Array(16));
-  const session = { key: await deriveKey(pin, salt), salt };
+  const session = { key: await deriveKey(pass, salt), salt };
   await writeVault(session, data);
-  setItem(META_KEY, JSON.stringify({ pinLength: pin.length }));
+  setMeta({ pinLength: pass.length, kind });
   return session;
+}
+
+/** Checks a passcode against the stored vault without changing anything. */
+export async function checkPasscode(pass: string) {
+  try {
+    await openVault(pass);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function openVault(pin: string): Promise<{ session: Session; data: AppData }> {
@@ -109,15 +130,16 @@ export async function openVault(pin: string): Promise<{ session: Session; data: 
   return { session: { key, salt }, data: JSON.parse(dec.decode(plain)) as AppData };
 }
 
-export async function changePin(newPin: string, data: AppData): Promise<Session> {
-  return createVault(newPin, data);
+export async function changePasscode(pass: string, kind: 'pin' | 'password', data: AppData): Promise<Session> {
+  return createVault(pass, data, kind);
 }
 
 /** The encrypted vault exactly as stored — safe to save as a backup file. */
 export function exportBackup(): string | null {
   const raw = getItem(VAULT_KEY);
   if (!raw) return null;
-  return JSON.stringify({ app: 'ledgerly', exportedAt: new Date().toISOString(), pinLength: pinLength(), vault: JSON.parse(raw) });
+  const m = getMeta();
+  return JSON.stringify({ app: 'ledgerly', exportedAt: new Date().toISOString(), pinLength: m.pinLength, kind: m.kind, vault: JSON.parse(raw) });
 }
 
 export function importBackup(text: string) {
@@ -127,7 +149,7 @@ export function importBackup(text: string) {
     throw new Error('This is not a Ledgerly backup file');
   }
   setItem(VAULT_KEY, JSON.stringify(vault));
-  setItem(META_KEY, JSON.stringify({ pinLength: parsed.pinLength ?? 4 }));
+  setItem(META_KEY, JSON.stringify({ pinLength: parsed.pinLength ?? 4, kind: parsed.kind === 'password' ? 'password' : 'pin', biometric: false }));
 }
 
 export function wipeVault() {

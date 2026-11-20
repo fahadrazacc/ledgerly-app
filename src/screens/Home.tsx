@@ -3,10 +3,11 @@ import { useStore } from '../store';
 import { href } from '../router';
 import { accountColor, accountIcon, Empty, IconTile, Progress } from '../ui';
 import { RecordRow } from './RecordRow';
-import { addMonths, balanceOf, initials, money, monthShort, spentInCategory, startOfMonth, sums, totalBalance } from '../utils';
+import { Avatar } from './Profile';
+import { addMonths, balanceOf, money, monthShort, spentInCategory, startOfMonth, sums, totalBalance } from '../utils';
 
 export function Home() {
-  const { data, cur, lock } = useStore();
+  const { data, cur, lock, hidden, toggleHidden } = useStore();
   const now = new Date();
   const start = startOfMonth(now);
   const end = addMonths(start, 1);
@@ -22,18 +23,19 @@ export function Home() {
   return (
     <main className="screen">
       <header className="head">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-          <span className="tile" style={{ width: 44, height: 44, background: 'var(--accent)', color: '#fff', fontWeight: 800 }}>
-            {initials(data.settings.name)}
-          </span>
+        <a href={href('profile')} aria-label="Open profile" style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, textDecoration: 'none', color: 'var(--ink)' }}>
+          <Avatar />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
             <span className="muted" style={{ fontSize: 13, fontWeight: 500 }}>
               {greeting}
             </span>
-            <span style={{ fontSize: 18, fontWeight: 700 }}>{data.settings.name}</span>
+            <span style={{ fontSize: 18, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{data.settings.name}</span>
           </div>
-        </div>
+        </a>
         <div className="head-actions">
+          <button className="btn-icon" aria-label={hidden ? 'Show amounts' : 'Hide amounts'} aria-pressed={hidden} onClick={toggleHidden}>
+            <Icon name={hidden ? 'eyeOff' : 'eye'} />
+          </button>
           <button className="btn-icon" aria-label="Lock app" onClick={lock}>
             <Icon name="lock" />
           </button>
