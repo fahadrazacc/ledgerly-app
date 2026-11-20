@@ -75,6 +75,9 @@ export interface Meta {
   pinLength: number;
   kind: 'pin' | 'password';
   biometric: boolean;
+  autoBackup: boolean;
+  autoFile?: string;
+  lastBackupAt?: number;
 }
 export function getMeta(): Meta {
   let m: Partial<Meta> = {};
@@ -83,7 +86,14 @@ export function getMeta(): Meta {
   } catch {
     /* ignore */
   }
-  return { pinLength: typeof m.pinLength === 'number' ? m.pinLength : 4, kind: m.kind === 'password' ? 'password' : 'pin', biometric: !!m.biometric };
+  return {
+    pinLength: typeof m.pinLength === 'number' ? m.pinLength : 4,
+    kind: m.kind === 'password' ? 'password' : 'pin',
+    biometric: !!m.biometric,
+    autoBackup: !!m.autoBackup,
+    autoFile: typeof m.autoFile === 'string' ? m.autoFile : undefined,
+    lastBackupAt: typeof m.lastBackupAt === 'number' ? m.lastBackupAt : undefined,
+  };
 }
 export function setMeta(patch: Partial<Meta>) {
   setItem(META_KEY, JSON.stringify({ ...getMeta(), ...patch }));

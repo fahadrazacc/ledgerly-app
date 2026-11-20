@@ -211,6 +211,9 @@ function Setup({ onOpen, onRestored }: { onOpen: (s: Session, d: AppData) => voi
         Restore from a backup file
       </button>
       <input ref={fileRef} type="file" hidden onChange={(e) => restore(e.target.files?.[0])} />
+      <div className="muted small" style={{ textAlign: 'center' }}>
+        Reinstalled the app? Restore your latest backup — look in <strong>Documents → Ledgerly</strong> or wherever you shared it.
+      </div>
       <div className="muted small" style={{ fontWeight: 600 }}>
         or start fresh
       </div>

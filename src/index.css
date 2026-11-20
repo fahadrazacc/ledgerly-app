@@ -228,3 +228,4 @@ h1, h2, h3 { margin: 0; }
   .acc-strip { margin: 0; padding: 0; grid-auto-columns: minmax(110px, 1fr); }
   .home-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
 }
+.row-sub.wrap { white-space: normal; overflow: visible; }

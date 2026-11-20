@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import type { AppData } from './types';
 import { writeVault, type Session } from './vault';
 import { setMasked } from './utils';
+import { scheduleAutoBackup } from './backup';
 
 interface Store {
   data: AppData;
@@ -33,7 +34,10 @@ export function StoreProvider(props: {
       first.current = false;
       return;
     }
-    saving.current = saving.current.then(() => writeVault(session, data)).catch((e) => console.error('Save failed', e));
+    saving.current = saving.current
+      .then(() => writeVault(session, data))
+      .then(scheduleAutoBackup)
+      .catch((e) => console.error('Save failed', e));
   }, [data, session]);
 
   setMasked(!!data.settings.hideAmounts);
