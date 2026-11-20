@@ -1,3 +1,4 @@
+import { ask } from '../confirm';
 import { useRef, useState } from 'react';
 import { Icon } from '../icons';
 import { useStore } from '../store';
@@ -109,7 +110,8 @@ export function Settings() {
           onChange={async (e) => {
             const f = e.target.files?.[0];
             if (!f) return;
-            if (!confirm('Replace all data on this device with this backup? You will need the PIN that was used for the backup.')) return;
+            e.target.value = '';
+            if (!(await ask('Replace all data on this device with this backup? You will need the PIN that was used for the backup.', { ok: 'Restore' }))) return;
             try {
               importBackup(await f.text());
               lock();
@@ -124,8 +126,8 @@ export function Settings() {
         <h2 className="h2">Danger zone</h2>
         <button
           className="btn danger block"
-          onClick={() => {
-            if (confirm('Erase ALL data on this device? This cannot be undone.') && confirm('Are you sure? Download a backup first if you might need it.')) {
+          onClick={async () => {
+            if ((await ask('Erase ALL data on this device? This cannot be undone.', { ok: 'Continue' })) && (await ask('Last check: download a backup first if you might need it. Erase everything now?', { ok: 'Erase' }))) {
               wipeVault();
               lock();
             }

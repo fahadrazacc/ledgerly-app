@@ -1,3 +1,4 @@
+import { ask } from '../confirm';
 import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '../icons';
 import { useStore } from '../store';
@@ -88,8 +89,8 @@ export function AddRecord({ id, from, presetType }: { id: string | null; from: s
     go(from);
   }
 
-  const remove = () => {
-    if (!existing || !confirm('Delete this record?')) return;
+  const remove = async () => {
+    if (!existing || !(await ask('Delete this record?'))) return;
     update((d) => ({ ...d, txns: d.txns.filter((t) => t.id !== existing.id) }));
     go(from);
   };

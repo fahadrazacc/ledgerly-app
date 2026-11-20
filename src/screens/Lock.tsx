@@ -1,3 +1,4 @@
+import { ask } from '../confirm';
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../icons';
 import { Keypad } from '../ui';
@@ -57,8 +58,8 @@ function Unlock({ onOpen, onReset }: { onOpen: (s: Session, d: AppData) => void;
       .finally(() => setBusy(false));
   }, [pin, len, onOpen]);
 
-  const erase = () => {
-    if (confirm('Erase all data on this device and start again? This cannot be undone unless you have a backup file.')) {
+  const erase = async () => {
+    if (await ask('Erase all data on this device and start again? This cannot be undone unless you have a backup file.', { ok: 'Erase' })) {
       wipeVault();
       onReset();
     }

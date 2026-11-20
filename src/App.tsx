@@ -5,6 +5,7 @@ import { href, useRoute, type Path } from './router';
 import type { AppData, RecordType } from './types';
 import type { Session } from './vault';
 import { Lock } from './screens/Lock';
+import { ConfirmHost } from './confirm';
 import { Home } from './screens/Home';
 import { Records } from './screens/Records';
 import { AddRecord } from './screens/AddRecord';
@@ -18,11 +19,17 @@ export default function App() {
   const onOpen = useCallback((session: Session, data: AppData) => setOpen({ session, data }), []);
   const onLock = useCallback(() => setOpen(null), []);
 
-  if (!open) return <Lock onOpen={onOpen} />;
   return (
-    <StoreProvider initial={open.data} session={open.session} onLock={onLock}>
-      <Shell />
-    </StoreProvider>
+    <>
+      {open ? (
+        <StoreProvider initial={open.data} session={open.session} onLock={onLock}>
+          <Shell />
+        </StoreProvider>
+      ) : (
+        <Lock onOpen={onOpen} />
+      )}
+      <ConfirmHost />
+    </>
   );
 }
 

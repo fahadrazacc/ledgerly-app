@@ -1,3 +1,4 @@
+import { ask } from '../confirm';
 import { useState } from 'react';
 import { Icon } from '../icons';
 import { useStore } from '../store';
@@ -180,7 +181,7 @@ function BudgetSheet(props: { budget: Budget | null; onClose: () => void; onSave
         {error && <div className="error" role="alert">{error}</div>}
         <button className="btn primary block">Save budget</button>
         {existing && (
-          <button type="button" className="btn danger block" onClick={() => confirm('Delete this budget?') && props.onDelete(existing.id)}>
+          <button type="button" className="btn danger block" onClick={async () => (await ask('Delete this budget?')) && props.onDelete(existing.id)}>
             <Icon name="trash" size={18} />
             Delete budget
           </button>

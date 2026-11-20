@@ -1,3 +1,4 @@
+import { ask } from '../confirm';
 import { useState } from 'react';
 import { Icon } from '../icons';
 import { useStore } from '../store';
@@ -198,7 +199,7 @@ function AccountSheet(props: { account: Account | null; onClose: () => void; onS
           <button
             type="button"
             className="btn danger block"
-            onClick={() => confirm(used ? 'This account has records, so it will be hidden rather than deleted. Continue?' : 'Delete this account?') && props.onDelete(a.id)}
+            onClick={async () => (await ask(used ? 'This account has records, so it will be hidden rather than deleted.' : 'Delete this account?', { ok: used ? 'Hide' : 'Delete' })) && props.onDelete(a.id)}
           >
             <Icon name="trash" size={18} />
             {used ? 'Hide account' : 'Delete account'}
@@ -288,7 +289,7 @@ function DebtSheet(props: { debt: Debt | null; onClose: () => void; onSave: (d: 
           </button>
         )}
         {d && (
-          <button type="button" className="btn danger block" onClick={() => confirm('Delete this debt?') && props.onDelete(d.id)}>
+          <button type="button" className="btn danger block" onClick={async () => (await ask('Delete this debt?')) && props.onDelete(d.id)}>
             <Icon name="trash" size={18} />
             Delete
           </button>
