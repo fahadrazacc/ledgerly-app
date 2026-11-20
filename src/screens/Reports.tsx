@@ -2,50 +2,26 @@ import { useState } from 'react';
 import { Icon } from '../icons';
 import { useStore } from '../store';
 import { CatTile, Empty, Progress, Segmented } from '../ui';
-import { addDays, addMonths, byCategory, money, monthLabel, monthShort, short, startOfMonth, startOfWeek, sums } from '../utils';
-
-type Period = 'week' | 'month' | 'year';
-
-function rangeFor(period: Period, anchor: Date) {
-  if (period === 'week') {
-    const s = startOfWeek(anchor);
-    return { start: s, end: addDays(s, 7) };
-  }
-  if (period === 'month') {
-    const s = startOfMonth(anchor);
-    return { start: s, end: addMonths(s, 1) };
-  }
-  const s = new Date(anchor.getFullYear(), 0, 1);
-  return { start: s, end: new Date(anchor.getFullYear() + 1, 0, 1) };
-}
-
-function shift(period: Period, anchor: Date, n: number) {
-  if (period === 'week') return addDays(anchor, 7 * n);
-  if (period === 'month') return addMonths(anchor, n);
-  return new Date(anchor.getFullYear() + n, 0, 1);
-}
-
-function label(period: Period, start: Date, end: Date) {
-  if (period === 'month') return monthLabel(start);
-  if (period === 'year') return String(start.getFullYear());
-  const e = addDays(end, -1);
-  const f = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-  return `${f(start)} – ${f(e)}`;
-}
+import { CustomRange, periodLabel, periodRange, shiftAnchor, type Period } from './Records';
+import { addDays, addMonths, byCategory, money, monthShort, short, startOfMonth, sums } from '../utils';
 
 export function Reports() {
   const { data, cur } = useStore();
   const [period, setPeriod] = useState<Period>('month');
   const [anchor, setAnchor] = useState(() => new Date());
   const [kind, setKind] = useState<'expense' | 'income'>('expense');
+  const [custom, setCustom] = useState(() => ({ from: addDays(new Date(), -29), to: new Date() }));
+  const [customOpen, setCustomOpen] = useState(false);
 
-  const { start, end } = rangeFor(period, anchor);
+  const { start, end } = periodRange(period, anchor, custom);
+  const rangeDays = Math.round((end.getTime() - start.getTime()) / 86_400_000);
   const isCurrent = end.getTime() > Date.now();
   const cats = byCategory(data, start, end, kind);
   const total = cats.reduce((s, c) => s + c.amount, 0);
   const { income, expense } = sums(data.txns, start, end);
 
-  const prev = rangeFor(period, shift(period, anchor, -1));
+  // previous period of the same kind (for custom: the same number of days just before)
+  const prev = period === 'custom' ? { start: addDays(start, -rangeDays), end: start } : periodRange(period, shiftAnchor(period, anchor, -1), custom);
   const prevTotal = sums(data.txns, prev.start, prev.end)[kind];
   const change = prevTotal > 0 ? ((total - prevTotal) / prevTotal) * 100 : null;
 
@@ -61,7 +37,8 @@ export function Reports() {
   });
 
   // trend: 6 months ending at the selected period (12 for year view)
-  const months = period === 'year' ? 12 : 6;
+  const spanMonths = (addDays(end, -1).getFullYear() - start.getFullYear()) * 12 + addDays(end, -1).getMonth() - start.getMonth() + 1;
+  const months = period === 'year' ? 12 : period === 'custom' ? Math.min(12, Math.max(6, spanMonths)) : 6;
   const lastMonth = period === 'year' ? new Date(start.getFullYear(), 11, 1) : startOfMonth(addDays(end, -1));
   const trend = Array.from({ length: months }, (_, i) => {
     const m = addMonths(lastMonth, i - months + 1);
@@ -81,23 +58,33 @@ export function Reports() {
         onChange={(p) => {
           setPeriod(p);
           setAnchor(new Date());
+          if (p === 'custom') setCustomOpen(true);
         }}
         options={[
           { value: 'week', label: 'Week' },
           { value: 'month', label: 'Month' },
           { value: 'year', label: 'Year' },
+          { value: 'custom', label: 'Custom' },
         ]}
       />
 
-      <div className="month-nav">
-        <button aria-label="Previous period" onClick={() => setAnchor(shift(period, anchor, -1))}>
-          <Icon name="chevL" />
+      {period === 'custom' ? (
+        <button className="month-nav" style={{ border: 0, justifyContent: 'center', gap: 10, height: 52, color: 'var(--ink)' }} onClick={() => setCustomOpen(true)} aria-label="Change dates">
+          <Icon name="calendar" size={18} />
+          <span>{periodLabel(period, start, end)}</span>
+          <Icon name="chevD" size={18} />
         </button>
-        <span>{label(period, start, end)}</span>
-        <button aria-label="Next period" disabled={isCurrent} onClick={() => setAnchor(shift(period, anchor, 1))}>
-          <Icon name="chevR" />
-        </button>
-      </div>
+      ) : (
+        <div className="month-nav">
+          <button aria-label="Previous period" onClick={() => setAnchor(shiftAnchor(period, anchor, -1))}>
+            <Icon name="chevL" />
+          </button>
+          <span>{periodLabel(period, start, end)}</span>
+          <button aria-label="Next period" disabled={isCurrent} onClick={() => setAnchor(shiftAnchor(period, anchor, 1))}>
+            <Icon name="chevR" />
+          </button>
+        </div>
+      )}
 
       <div className="grid3">
         <div className="stat">
@@ -127,7 +114,7 @@ export function Reports() {
               }}
             >
               {change > 0 ? '+' : ''}
-              {change.toFixed(1)}% vs previous
+              {change.toFixed(1)}% vs {period === 'custom' ? `previous ${rangeDays} days` : 'previous'}
             </span>
           )}
         </div>
@@ -212,6 +199,18 @@ export function Reports() {
         </div>
       </section>
       </div>
+
+      {customOpen && (
+        <CustomRange
+          value={custom}
+          onClose={() => setCustomOpen(false)}
+          onApply={(v) => {
+            setCustom(v);
+            setPeriod('custom');
+            setCustomOpen(false);
+          }}
+        />
+      )}
     </main>
   );
 }

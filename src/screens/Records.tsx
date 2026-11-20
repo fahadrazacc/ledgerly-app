@@ -251,7 +251,7 @@ export function Records({ account: initialAccount }: { account: string | null })
   );
 }
 
-function CustomRange({ value, onClose, onApply }: { value: { from: Date; to: Date }; onClose: () => void; onApply: (v: { from: Date; to: Date }) => void }) {
+export function CustomRange({ value, onClose, onApply }: { value: { from: Date; to: Date }; onClose: () => void; onApply: (v: { from: Date; to: Date }) => void }) {
   const [from, setFrom] = useState(toDateInput(value.from));
   const [to, setTo] = useState(toDateInput(value.to));
   const [error, setError] = useState('');
