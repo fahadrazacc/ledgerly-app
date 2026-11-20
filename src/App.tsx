@@ -6,19 +6,21 @@ import type { AppData, RecordType } from './types';
 import type { Session } from './vault';
 import { Lock } from './screens/Lock';
 import { ConfirmHost } from './confirm';
+import { ToastHost } from './toast';
+import { normalize } from './utils';
+import { Reminders } from './screens/Reminders';
 import { Home } from './screens/Home';
 import { Records } from './screens/Records';
 import { AddRecord } from './screens/AddRecord';
 import { Reports } from './screens/Reports';
 import { Budgets } from './screens/Budgets';
 import { Accounts } from './screens/Accounts';
-import { Settings } from './screens/Settings';
 import { Profile } from './screens/Profile';
 import { Categories } from './screens/Categories';
 
 export default function App() {
   const [open, setOpen] = useState<{ session: Session; data: AppData } | null>(null);
-  const onOpen = useCallback((session: Session, data: AppData) => setOpen({ session, data }), []);
+  const onOpen = useCallback((session: Session, data: AppData) => setOpen({ session, data: normalize(data) }), []);
   const onLock = useCallback(() => setOpen(null), []);
 
   return (
@@ -31,6 +33,7 @@ export default function App() {
         <Lock onOpen={onOpen} />
       )}
       <ConfirmHost />
+      <ToastHost />
     </>
   );
 }
@@ -52,7 +55,7 @@ function Shell() {
       screen = <Records key={params.get('account') ?? 'all'} account={params.get('account')} />;
       break;
     case 'add':
-      screen = <AddRecord key={params.get('id') ?? 'new'} id={params.get('id')} from={params.get('from') || 'home'} presetType={params.get('type') as RecordType | null} />;
+      screen = <AddRecord key={(params.get('id') ?? '') + (params.get('reminder') ?? '')} id={params.get('id')} reminderId={params.get('reminder')} from={params.get('from') || 'home'} presetType={params.get('type') as RecordType | null} />;
       break;
     case 'reports':
       screen = <Reports />;
@@ -64,10 +67,11 @@ function Shell() {
       screen = <Accounts />;
       break;
     case 'settings':
-      screen = <Settings />;
-      break;
     case 'profile':
       screen = <Profile />;
+      break;
+    case 'reminders':
+      screen = <Reminders />;
       break;
     case 'categories':
       screen = <Categories />;
@@ -76,7 +80,7 @@ function Shell() {
       screen = <Home />;
   }
 
-  const active = ['accounts', 'settings', 'profile', 'categories'].includes(path) ? 'home' : path;
+  const active = ['accounts', 'settings', 'profile', 'categories', 'reminders'].includes(path) ? 'home' : path;
   const navItem = (n: (typeof NAV)[number]) => (
     <a key={n.path} className={`item ${active === n.path ? 'on' : ''}`} href={href(n.path)} aria-current={active === n.path ? 'page' : undefined}>
       <Icon name={n.icon} size={22} stroke={1.9} />

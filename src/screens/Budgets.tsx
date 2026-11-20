@@ -40,7 +40,7 @@ export function Budgets() {
         <button className="card" style={{ display: 'flex', alignItems: 'center', gap: 18, border: 0, textAlign: 'left' }} onClick={() => setEditing(overall)}>
           <div style={{ position: 'relative', width: 104, height: 104, flexShrink: 0 }}>
             <svg role="img" aria-label={`${Math.round(oPct)}% of monthly budget used`} width="104" height="104" viewBox="0 0 104 104" style={{ transform: 'rotate(-90deg)' }}>
-              <circle cx="52" cy="52" r="44" fill="none" stroke="#ECEEF3" strokeWidth="12" />
+              <circle cx="52" cy="52" r="44" fill="none" stroke="var(--line)" strokeWidth="12" />
               <circle cx="52" cy="52" r="44" fill="none" stroke={oPct > 100 ? '#E8590C' : '#3B5BDB'} strokeWidth="12" strokeLinecap="round" pathLength={100} strokeDasharray={`${Math.min(100, oPct)} 100`} />
             </svg>
             <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>

@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { Icon, type IconName } from './icons';
-import type { AccountKind, Category } from './types';
+import type { Account, AccountKind, Category } from './types';
 import { href } from './router';
 import { tint } from './utils';
 
@@ -14,6 +14,14 @@ export function IconTile({ icon, color, size = 40 }: { icon: IconName; color: st
 
 export function CatTile({ cat, size }: { cat?: Category; size?: number }) {
   return <IconTile icon={cat?.icon ?? 'tag'} color={cat?.color ?? '#868E96'} size={size} />;
+}
+
+/** An account's picture: uploaded image, chosen icon/colour, or the default for its type. */
+export function AccountTile({ account, size = 40 }: { account?: Account; size?: number }) {
+  if (account?.image)
+    return <img src={account.image} alt="" width={size} height={size} style={{ width: size, height: size, borderRadius: Math.round(size * 0.32), objectFit: 'cover', flexShrink: 0 }} />;
+  const kind = account?.kind ?? 'bank';
+  return <IconTile icon={account?.icon ?? accountIcon[kind]} color={account?.color ?? accountColor[kind]} size={size} />;
 }
 
 export const accountIcon: Record<AccountKind, IconName> = {

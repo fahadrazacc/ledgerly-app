@@ -78,6 +78,7 @@ export interface Meta {
   autoBackup: boolean;
   autoFile?: string;
   lastBackupAt?: number;
+  theme: 'system' | 'light' | 'dark';
 }
 export function getMeta(): Meta {
   let m: Partial<Meta> = {};
@@ -93,6 +94,7 @@ export function getMeta(): Meta {
     autoBackup: !!m.autoBackup,
     autoFile: typeof m.autoFile === 'string' ? m.autoFile : undefined,
     lastBackupAt: typeof m.lastBackupAt === 'number' ? m.lastBackupAt : undefined,
+    theme: m.theme === 'dark' || m.theme === 'light' ? m.theme : 'system',
   };
 }
 export function setMeta(patch: Partial<Meta>) {

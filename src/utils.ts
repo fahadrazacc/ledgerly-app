@@ -123,7 +123,7 @@ export function spentInCategory(data: AppData, categoryId: string | null, start:
     .reduce((s, t) => s + t.amount, 0);
 }
 
-export function tint(hex: string, alpha = 0.13) {
+export function tint(hex: string, alpha = document.documentElement.dataset.theme === 'dark' ? 0.22 : 0.13) {
   const n = parseInt(hex.slice(1), 16);
   const r = (n >> 16) & 255;
   const g = (n >> 8) & 255;
@@ -181,4 +181,32 @@ export function toCsv(data: AppData) {
       ]),
     );
   return rows.map((r) => r.map(esc).join(',')).join('\n');
+}
+
+/** Shrinks a picked image to a square JPEG data URL (kept small inside the encrypted vault). */
+export async function resizeImage(file: File, size = 256): Promise<string> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((res, rej) => {
+      const i = new Image();
+      i.onload = () => res(i);
+      i.onerror = () => rej(new Error('Could not read that image'));
+      i.src = url;
+    });
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const side = Math.min(img.width, img.height);
+    const ctx = c.getContext('2d')!;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, size, size);
+    ctx.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, size, size);
+    return c.toDataURL('image/jpeg', 0.85);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+/** Fills in fields added in later versions so older saved data keeps working. */
+export function normalize(d: AppData): AppData {
+  return { ...d, reminders: d.reminders ?? [], budgets: d.budgets ?? [], debts: d.debts ?? [] };
 }

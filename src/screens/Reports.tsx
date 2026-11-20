@@ -121,7 +121,7 @@ export function Reports() {
             <span
               className="badge"
               style={{
-                background: (kind === 'expense' ? change > 0 : change < 0) ? '#FFF0E6' : '#E7F5EF',
+                background: (kind === 'expense' ? change > 0 : change < 0) ? 'var(--exp-soft)' : 'var(--inc-soft)',
                 color: (kind === 'expense' ? change > 0 : change < 0) ? 'var(--exp)' : 'var(--inc)',
               }}
             >
@@ -145,7 +145,7 @@ export function Reports() {
           <>
             <div style={{ position: 'relative', width: 180, height: 180, alignSelf: 'center' }}>
               <svg role="img" aria-label={`${kind === 'expense' ? 'Spending' : 'Income'} by category, total ${money(total, cur)}`} width="180" height="180" viewBox="0 0 160 160" style={{ transform: 'rotate(-90deg)' }}>
-                <circle cx="80" cy="80" r="62" fill="none" stroke="#ECEEF3" strokeWidth="18" />
+                <circle cx="80" cy="80" r="62" fill="none" stroke="var(--line)" strokeWidth="18" />
                 {segs.map((s, i) => (
                   <circle key={i} cx="80" cy="80" r="62" fill="none" stroke={s.color} strokeWidth="18" pathLength={100} strokeDasharray={`${s.len} ${100 - s.len}`} strokeDashoffset={s.offset} />
                 ))}
@@ -181,7 +181,7 @@ export function Reports() {
           <h2 className="h2">Income vs expense</h2>
           <div style={{ display: 'flex', gap: 12, fontSize: 11, fontWeight: 600 }} className="muted">
             <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <span style={{ width: 8, height: 8, borderRadius: 2, background: '#087F5B' }} />
+              <span style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--inc)' }} />
               Income
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -197,7 +197,7 @@ export function Reports() {
         >
           {trend.map((t, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 3, height: '100%' }} title={`${monthShort(t.m)} — income ${money(t.income, cur)}, expense ${money(t.expense, cur)}`}>
-              <span style={{ width: months > 6 ? 8 : 12, height: `${(t.income / max) * 100}%`, background: '#087F5B', borderRadius: '4px 4px 0 0' }} />
+              <span style={{ width: months > 6 ? 8 : 12, height: `${(t.income / max) * 100}%`, background: 'var(--inc)', borderRadius: '4px 4px 0 0' }} />
               <span style={{ width: months > 6 ? 8 : 12, height: `${(t.expense / max) * 100}%`, background: '#FF922B', borderRadius: '4px 4px 0 0' }} />
             </div>
           ))}

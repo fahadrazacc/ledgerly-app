@@ -152,6 +152,7 @@ function Unlock({ onOpen, onReset }: { onOpen: (s: Session, d: AppData) => void;
       <button className="link" onClick={erase}>
         Forgot it? Erase and start again
       </button>
+      <span className="muted small">Ledgerly {__APP_VERSION__}</span>
     </main>
   );
 }

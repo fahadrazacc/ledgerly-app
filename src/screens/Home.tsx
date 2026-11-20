@@ -1,13 +1,15 @@
 import { Icon } from '../icons';
 import { useStore } from '../store';
 import { href } from '../router';
-import { accountColor, accountIcon, Empty, IconTile, Progress } from '../ui';
+import { AccountTile, CatTile, Empty, IconTile, Progress } from '../ui';
+import { upcoming } from '../notify';
+import { dueLabel } from './Reminders';
 import { RecordRow } from './RecordRow';
 import { Avatar } from './Profile';
 import { addMonths, balanceOf, money, monthShort, spentInCategory, startOfMonth, sums, totalBalance } from '../utils';
 
 export function Home() {
-  const { data, cur, lock, hidden, toggleHidden } = useStore();
+  const { data, cur, hidden, toggleHidden } = useStore();
   const now = new Date();
   const start = startOfMonth(now);
   const end = addMonths(start, 1);
@@ -19,6 +21,8 @@ export function Home() {
   const daysLeft = Math.ceil((end.getTime() - now.getTime()) / 86_400_000);
   const recent = [...data.txns].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
   const accounts = data.accounts.filter((a) => !a.archived);
+  const soon = upcoming(data, 7);
+  const dueCount = soon.filter((r) => new Date(r.due).getTime() < Date.now() + 86_400_000).length;
 
   return (
     <main className="screen">
@@ -33,13 +37,11 @@ export function Home() {
           </div>
         </a>
         <div className="head-actions">
-          <button className="btn-icon" aria-label={hidden ? 'Show amounts' : 'Hide amounts'} aria-pressed={hidden} onClick={toggleHidden}>
-            <Icon name={hidden ? 'eyeOff' : 'eye'} />
-          </button>
-          <button className="btn-icon" aria-label="Lock app" onClick={lock}>
-            <Icon name="lock" />
-          </button>
-          <a className="btn-icon" aria-label="Settings" href={href('settings')}>
+          <a className="btn-icon" aria-label={`Payment reminders${dueCount ? `, ${dueCount} due` : ''}`} href={href('reminders')}>
+            <Icon name="bell" />
+            {dueCount > 0 && <span className="bell-dot">{dueCount}</span>}
+          </a>
+          <a className="btn-icon" aria-label="Profile and settings" href={href('profile')}>
             <Icon name="settings" />
           </a>
         </div>
@@ -50,9 +52,19 @@ export function Home() {
           <section className="dark-card" aria-label="Balance">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span className="dark-muted">Total balance</span>
-              <span className="badge" style={{ background: '#232b3b' }}>
-                {monthShort(now)} {now.getFullYear()}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span className="badge" style={{ background: '#2a3446', color: '#fff' }}>
+                  {monthShort(now)} {now.getFullYear()}
+                </span>
+                <button
+                  onClick={toggleHidden}
+                  aria-label={hidden ? 'Show amounts' : 'Hide amounts'}
+                  aria-pressed={hidden}
+                  style={{ width: 44, height: 44, marginRight: -10, border: 0, borderRadius: 12, background: 'transparent', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Icon name={hidden ? 'eyeOff' : 'eye'} size={20} />
+                </button>
+              </div>
             </div>
             <div className="big-num">{money(totalBalance(data), cur)}</div>
             <div className="grid2">
@@ -77,6 +89,39 @@ export function Home() {
             </div>
           </section>
 
+          {soon.length > 0 && (
+            <section className="section">
+              <div className="section-head">
+                <h2 className="h2">Upcoming payments</h2>
+                <a className="link" href={href('reminders')}>
+                  See all
+                </a>
+              </div>
+              <div className="card list">
+                {soon.slice(0, 3).map((r) => {
+                  const due = dueLabel(r.due);
+                  return (
+                    <div key={r.id} className="acc-row">
+                      <a className="row" href={href('reminders')}>
+                        <CatTile cat={data.categories.find((c) => c.id === r.categoryId)} size={38} />
+                        <span className="row-main">
+                          <span className="row-title">{r.title}</span>
+                          <span className="row-sub" style={{ fontWeight: 700, color: due.late ? 'var(--exp)' : 'var(--accent)' }}>
+                            {due.text}
+                            {r.amount ? ` · ${money(r.amount, cur)}` : ''}
+                          </span>
+                        </span>
+                      </a>
+                      <a className="btn small primary" style={{ height: 38, padding: '0 14px' }} href={href(`add?reminder=${r.id}&from=home`)}>
+                        {r.type === 'income' ? 'Receive' : 'Pay'}
+                      </a>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
           <section className="section">
             <div className="section-head">
               <h2 className="h2">Accounts</h2>
@@ -87,7 +132,7 @@ export function Home() {
             <div className="acc-strip">
               {accounts.map((a) => (
                 <a key={a.id} className="acc-card" href={href('accounts')}>
-                  <IconTile icon={accountIcon[a.kind]} color={accountColor[a.kind]} size={32} />
+                  <AccountTile account={a} size={32} />
                   <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
                     <span className="muted small" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {a.name}

@@ -3,6 +3,8 @@ import type { AppData } from './types';
 import { writeVault, type Session } from './vault';
 import { setMasked } from './utils';
 import { scheduleAutoBackup } from './backup';
+import { syncNotifications } from './notify';
+import { applyTheme } from './theme';
 
 interface Store {
   data: AppData;
@@ -36,22 +38,35 @@ export function StoreProvider(props: {
     }
     saving.current = saving.current
       .then(() => writeVault(session, data))
-      .then(scheduleAutoBackup)
+      .then(() => {
+        scheduleAutoBackup();
+        syncNotifications(data);
+      })
       .catch((e) => console.error('Save failed', e));
   }, [data, session]);
 
   setMasked(!!data.settings.hideAmounts);
 
+  const theme = data.settings.theme ?? 'system';
+  useEffect(() => applyTheme(theme), [theme]);
+  // Plan notifications once after unlocking (e.g. after a reinstall + restore).
+  useEffect(() => {
+    syncNotifications(data);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const update = useCallback((fn: (d: AppData) => AppData) => setData((d) => fn(d)), []);
 
-  // Auto-lock after 5 minutes in the background.
+  // Auto-lock after the chosen time in the background (default 5 minutes).
   const onLock = useRef(props.onLock);
   onLock.current = props.onLock;
+  const lockAfter = useRef(5);
+  lockAfter.current = data.settings.autoLockMin ?? 5;
   useEffect(() => {
     let hiddenAt = 0;
     const onVis = () => {
       if (document.hidden) hiddenAt = Date.now();
-      else if (hiddenAt && Date.now() - hiddenAt > 5 * 60_000) onLock.current();
+      else if (hiddenAt && Date.now() - hiddenAt >= lockAfter.current * 60_000) onLock.current();
     };
     document.addEventListener('visibilitychange', onVis);
     return () => document.removeEventListener('visibilitychange', onVis);

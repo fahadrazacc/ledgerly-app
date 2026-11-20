@@ -8,7 +8,10 @@ export interface Account {
   name: string;
   kind: AccountKind;
   initial: number;
-  archived?: boolean;
+  archived?: boolean; // shown to the user as "inactive"
+  icon?: IconName;
+  color?: string;
+  image?: string; // small uploaded picture (data URL)
 }
 
 export interface Category {
@@ -56,6 +59,33 @@ export interface Settings {
   phone?: string;
   photo?: string; // small JPEG data URL, stored inside the encrypted vault
   hideAmounts?: boolean;
+  theme?: 'system' | 'light' | 'dark';
+  autoLockMin?: number; // minutes in the background before locking; 0 = immediately
+  notify?: NotifySettings;
+}
+
+export interface NotifySettings {
+  daily: boolean;
+  dailyTime: string; // "HH:MM"
+  payments: boolean;
+  budgets: boolean;
+  debts: boolean;
+}
+
+export type Repeat = 'none' | 'weekly' | 'monthly' | 'yearly';
+
+/** A bill or payment the user wants to be reminded about. */
+export interface Reminder {
+  id: string;
+  title: string;
+  amount?: number;
+  type: 'expense' | 'income';
+  categoryId?: string;
+  accountId?: string;
+  due: string; // ISO date-time of the next occurrence
+  repeat: Repeat;
+  daysBefore: number; // 0 = on the day
+  active: boolean;
 }
 
 export interface AppData {
@@ -66,4 +96,5 @@ export interface AppData {
   txns: Txn[];
   budgets: Budget[];
   debts: Debt[];
+  reminders?: Reminder[];
 }
