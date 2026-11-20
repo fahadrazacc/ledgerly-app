@@ -1,0 +1,183 @@
+import type { ReactElement } from 'react';
+
+const paths = {
+  home: <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />,
+  list: <path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01" />,
+  plus: <path d="M12 5v14M5 12h14" />,
+  pie: (
+    <>
+      <path d="M21 12A9 9 0 1 1 12 3v9z" />
+      <path d="M15 3.5A9 9 0 0 1 20.5 9H15z" />
+    </>
+  ),
+  target: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="5" />
+      <circle cx="12" cy="12" r="1" />
+    </>
+  ),
+  search: (
+    <>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </>
+  ),
+  chevL: <path d="m15 6-6 6 6 6" />,
+  chevR: <path d="m9 6 6 6-6 6" />,
+  chevD: <path d="m6 9 6 6 6-6" />,
+  close: <path d="M6 6l12 12M18 6 6 18" />,
+  calendar: (
+    <>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M3 10h18M8 3v4M16 3v4" />
+    </>
+  ),
+  note: (
+    <>
+      <path d="M5 4h14v16H5z" />
+      <path d="M9 9h6M9 13h6" />
+    </>
+  ),
+  lock: (
+    <>
+      <rect x="4" y="11" width="16" height="10" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </>
+  ),
+  backspace: (
+    <>
+      <path d="M21 5H9l-6 7 6 7h12z" />
+      <path d="m12 9 6 6M18 9l-6 6" />
+    </>
+  ),
+  transfer: <path d="M4 8h15l-3-3M20 16H5l3 3" />,
+  cash: (
+    <>
+      <rect x="2.5" y="6" width="19" height="12" rx="2" />
+      <circle cx="12" cy="12" r="2.5" />
+    </>
+  ),
+  bank: <path d="M3 10 12 4l9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18" />,
+  wallet: (
+    <>
+      <rect x="6" y="2.5" width="12" height="19" rx="2.5" />
+      <path d="M11 18h2" />
+    </>
+  ),
+  card: (
+    <>
+      <rect x="2.5" y="5" width="19" height="14" rx="2" />
+      <path d="M2.5 10h19M6 15h4" />
+    </>
+  ),
+  savings: (
+    <>
+      <path d="M19 7V5H6a2 2 0 0 0 0 4h14v10H6a2 2 0 0 1-2-2V7" />
+      <path d="M16 14h.01" />
+    </>
+  ),
+  settings: (
+    <>
+      <path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12" />
+      <circle cx="16" cy="6" r="2" />
+      <circle cx="10" cy="12" r="2" />
+      <circle cx="18" cy="18" r="2" />
+    </>
+  ),
+  trash: <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />,
+  check: <path d="m5 12 5 5 9-10" />,
+  download: <path d="M12 4v11m-5-5 5 5 5-5M5 20h14" />,
+  upload: <path d="M12 20V9m-5 5 5-5 5 5M5 4h14" />,
+  arrowUR: <path d="M7 17 17 7M9 7h8v8" />,
+  arrowDL: <path d="M17 7 7 17M7 9v8h8" />,
+  edit: <path d="M4 20h4L19 9l-4-4L4 16z" />,
+  food: <path d="M4 3v7a3 3 0 0 0 6 0V3M7 3v18M17 3c-2 0-3 2-3 5s1 5 3 5v8" />,
+  bag: (
+    <>
+      <path d="M5 8h14l-1 13H6z" />
+      <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+    </>
+  ),
+  car: (
+    <>
+      <path d="M3 16v-4l2.5-5h13L21 12v4z" />
+      <circle cx="7" cy="17.5" r="1.8" />
+      <circle cx="17" cy="17.5" r="1.8" />
+    </>
+  ),
+  bolt: <path d="M13 2 4 14h7l-1 8 9-12h-7z" />,
+  heart: <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" />,
+  film: (
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m10 9 5 3-5 3z" />
+    </>
+  ),
+  book: (
+    <>
+      <path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z" />
+      <path d="M4 19V5" />
+    </>
+  ),
+  users: (
+    <>
+      <circle cx="9" cy="8" r="3.5" />
+      <path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
+      <path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6" />
+    </>
+  ),
+  house: (
+    <>
+      <path d="M4 10 12 4l8 6v10H4z" />
+      <path d="M10 20v-6h4v6" />
+    </>
+  ),
+  tag: (
+    <>
+      <path d="M3 12V4h8l10 10-8 8z" />
+      <circle cx="7.5" cy="8" r="1.2" />
+    </>
+  ),
+  briefcase: (
+    <>
+      <rect x="3" y="7" width="18" height="13" rx="2" />
+      <path d="M9 7V5h6v2M3 13h18" />
+    </>
+  ),
+  gift: (
+    <>
+      <rect x="3" y="8" width="18" height="5" rx="1" />
+      <path d="M5 13v8h14v-8M12 8v13M12 8S10 3 7.5 4.5 9 8 12 8zM12 8s2-5 4.5-3.5S15 8 12 8z" />
+    </>
+  ),
+  laptop: (
+    <>
+      <rect x="4" y="5" width="16" height="11" rx="1.5" />
+      <path d="M2 20h20" />
+    </>
+  ),
+  store: <path d="M4 10v10h16V10M3 4h18l-1 6H4zM10 20v-5h4v5" />,
+  trend: <path d="m3 17 6-6 4 4 8-8M15 7h6v6" />,
+} satisfies Record<string, ReactElement>;
+
+export type IconName = keyof typeof paths;
+export const iconNames = Object.keys(paths) as IconName[];
+
+export function Icon({ name, size = 20, stroke = 1.8 }: { name: IconName; size?: number; stroke?: number }) {
+  return (
+    <svg
+      aria-hidden="true"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={stroke}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {paths[name]}
+    </svg>
+  );
+}
