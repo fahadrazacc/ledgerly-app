@@ -1,5 +1,6 @@
 import { Icon } from '../icons';
 import { useStore } from '../store';
+import { SyncBanner } from './Cloud';
 import { href } from '../router';
 import { AccountTile, CatTile, Empty, IconTile, Progress } from '../ui';
 import { upcoming } from '../notify';
@@ -47,6 +48,7 @@ export function Home() {
         </div>
       </header>
 
+      <SyncBanner />
       <div className="home-grid">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <section className="dark-card" aria-label="Balance">

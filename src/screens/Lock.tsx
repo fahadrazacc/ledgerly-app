@@ -6,6 +6,9 @@ import { CURRENCIES, emptyData, sampleData } from '../seed';
 import type { AppData } from '../types';
 import { createVault, getMeta, hasVault, importBackup, openVault, wipeVault, type Session } from '../vault';
 import { biometricEnabled, disableBiometric, unlockWithBiometric } from '../biometric';
+import { AuthSheet } from './Cloud';
+import { fetchAccountData, restoreFromAccount, signOut, useSync } from '../cloud/sync';
+import { friendly, type Remote } from '../cloud/backend';
 
 export function Lock({ onOpen }: { onOpen: (s: Session, d: AppData) => void }) {
   const [mode, setMode] = useState<'unlock' | 'setup'>(hasVault() ? 'unlock' : 'setup');
@@ -167,6 +170,24 @@ function Setup({ onOpen, onRestored }: { onOpen: (s: Session, d: AppData) => voi
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const sync = useSync();
+  const [authOpen, setAuthOpen] = useState(false);
+  const [remote, setRemote] = useState<Remote | null>(null);
+  const [checking, setChecking] = useState(false);
+
+  const afterSignIn = async () => {
+    setChecking(true);
+    setError('');
+    try {
+      const r = await fetchAccountData();
+      if (r) setRemote(r);
+    } catch (e) {
+      setError(friendly(e));
+    }
+    setChecking(false);
+  };
+
+  if (remote) return <RestoreFromAccount remote={remote} email={sync.user?.email ?? ''} onOpen={onOpen} onCancel={() => setRemote(null)} />;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -207,13 +228,30 @@ function Setup({ onOpen, onRestored }: { onOpen: (s: Session, d: AppData) => voi
           Track spending, budgets and accounts. Your data is encrypted with your PIN or password.
         </span>
       </div>
-      <button type="button" className="btn primary block" onClick={() => fileRef.current?.click()}>
+      {sync.user ? (
+        <div className="note" style={{ width: '100%' }}>
+          <Icon name="user" size={18} />
+          <span style={{ flex: 1 }}>
+            {checking ? 'Looking for your data…' : <>Signed in as <strong>{sync.user.email}</strong>. No saved data yet: set up your PIN below and it will sync to this account.</>}
+          </span>
+          <button className="link" onClick={() => signOut()}>
+            Switch
+          </button>
+        </div>
+      ) : (
+        <button type="button" className="btn primary block" onClick={() => setAuthOpen(true)}>
+          <Icon name="user" size={18} />
+          Sign in to your Ledgerly account
+        </button>
+      )}
+      <button type="button" className="btn secondary block" onClick={() => fileRef.current?.click()}>
         <Icon name="upload" size={18} />
         Restore from a backup file
       </button>
+      {authOpen && <AuthSheet onClose={() => setAuthOpen(false)} onDone={afterSignIn} />}
       <input ref={fileRef} type="file" hidden onChange={(e) => restore(e.target.files?.[0])} />
       <div className="muted small" style={{ textAlign: 'center' }}>
-        Reinstalled the app? Restore your latest backup — look in <strong>Documents → Ledgerly</strong> or wherever you shared it.
+        Already use Ledgerly? Sign in to get your data back, or restore a backup file (look in <strong>Documents → Ledgerly</strong>).
       </div>
       <div className="muted small" style={{ fontWeight: 600 }}>
         or start fresh
@@ -271,6 +309,84 @@ function Setup({ onOpen, onRestored }: { onOpen: (s: Session, d: AppData) => voi
         <Icon name="lock" size={18} />
         <span>There is no recovery if you forget it. Keep a backup file from Settings somewhere safe.</span>
       </div>
+    </main>
+  );
+}
+
+/** Fresh install, signed in: open the account's data with its PIN/password. */
+function RestoreFromAccount({ remote, email, onOpen, onCancel }: { remote: Remote; email: string; onOpen: (s: Session, d: AppData) => void; onCancel: () => void }) {
+  const isPin = remote.kind === 'pin';
+  const len = remote.pinLength;
+  const [pass, setPass] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const tryIt = useCallback(
+    async (p: string) => {
+      setBusy(true);
+      setError('');
+      try {
+        const { session, data } = await restoreFromAccount(remote, p);
+        onOpen(session, data);
+      } catch (e) {
+        setError((e as Error).message === 'Wrong PIN' ? `Wrong ${isPin ? 'PIN' : 'password'}, try again` : friendly(e));
+        setPass('');
+        setBusy(false);
+      }
+    },
+    [remote, onOpen, isPin],
+  );
+
+  useEffect(() => {
+    if (isPin && pass.length === len && !busy) tryIt(pass);
+  }, [pass, len, isPin, busy, tryIt]);
+
+  return (
+    <main className="lock">
+      <Logo />
+      <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 800 }}>Your data is ready</h1>
+        <span className="muted" style={{ fontSize: 14 }}>
+          Signed in as <strong>{email}</strong>. Enter your Ledgerly {isPin ? 'PIN' : 'password'} to open it on this device.
+        </span>
+      </div>
+      {isPin ? (
+        <>
+          <div className="dots">
+            {Array.from({ length: len }, (_, i) => (
+              <span key={i} className={i < pass.length ? 'on' : ''} />
+            ))}
+          </div>
+          <div className="error" role="alert" style={{ minHeight: 18 }}>
+            {busy ? 'Opening…' : error}
+          </div>
+          <Keypad onKey={(k) => setPass((p) => (k === 'back' ? p.slice(0, -1) : /^\d$/.test(k) && p.length < len ? p + k : p))} />
+        </>
+      ) : (
+        <form
+          className="form"
+          style={{ width: '100%', maxWidth: 320 }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (pass) tryIt(pass);
+          }}
+        >
+          <input className="input" type="password" aria-label="Ledgerly password" value={pass} onChange={(e) => setPass(e.target.value)} autoFocus />
+          {error && <div className="error" role="alert">{error}</div>}
+          <button className="btn primary block" disabled={busy || !pass}>
+            {busy ? 'Opening…' : 'Open my data'}
+          </button>
+        </form>
+      )}
+      <button
+        className="link"
+        onClick={async () => {
+          await signOut();
+          onCancel();
+        }}
+      >
+        Use a different account
+      </button>
     </main>
   );
 }

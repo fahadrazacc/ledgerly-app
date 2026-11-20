@@ -5,6 +5,8 @@ import { setMasked } from './utils';
 import { scheduleAutoBackup } from './backup';
 import { syncNotifications } from './notify';
 import { applyTheme } from './theme';
+import { afterSave, attach, detach } from './cloud/sync';
+import { normalize } from './utils';
 
 interface Store {
   data: AppData;
@@ -41,11 +43,30 @@ export function StoreProvider(props: {
       .then(() => {
         scheduleAutoBackup();
         syncNotifications(data);
+        afterSave(data);
       })
       .catch((e) => console.error('Save failed', e));
   }, [data, session]);
 
   setMasked(!!data.settings.hideAmounts);
+
+  // cloud sync gets live access to the current data and key
+  const dataRef = useRef(data);
+  dataRef.current = data;
+  const sessionRef = useRef(session);
+  sessionRef.current = session;
+  useEffect(() => {
+    attach({
+      getData: () => dataRef.current,
+      getSession: () => sessionRef.current,
+      apply: (d) => setData(normalize(d)),
+      setSession: (s) => {
+        sessionRef.current = s;
+        setSession(s);
+      },
+    });
+    return () => detach();
+  }, []);
 
   const theme = data.settings.theme ?? 'system';
   useEffect(() => applyTheme(theme), [theme]);

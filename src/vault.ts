@@ -168,3 +168,58 @@ export function wipeVault() {
   removeItem(VAULT_KEY);
   removeItem(META_KEY);
 }
+
+// ---------- cloud sync helpers ----------
+// The cloud copy is the same kind of blob as the local vault: AES-GCM encrypted with the
+// PIN-derived key, so the server never sees readable data.
+
+/** Encrypts data with the session key into a self-describing blob (JSON string). */
+export async function sealWith(session: Session, data: AppData): Promise<string> {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, session.key, enc.encode(JSON.stringify(data)));
+  const blob: VaultBlob = { v: 1, iter: ITERATIONS, salt: toB64(session.salt), iv: toB64(iv), data: toB64(new Uint8Array(ct)) };
+  return JSON.stringify(blob);
+}
+
+/** Opens a blob with the current session key; returns null if it was locked with a different PIN/password. */
+export async function openWithSession(session: Session, blobText: string): Promise<AppData | null> {
+  const blob = JSON.parse(blobText) as VaultBlob;
+  if (blob.salt !== toB64(session.salt)) return null;
+  try {
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromB64(blob.iv) }, session.key, fromB64(blob.data));
+    return JSON.parse(dec.decode(plain)) as AppData;
+  } catch {
+    return null;
+  }
+}
+
+/** Opens a blob with a PIN/password. Throws "Wrong PIN" if it doesn't match. */
+export async function openBlob(blobText: string, pass: string): Promise<{ session: Session; data: AppData }> {
+  const blob = JSON.parse(blobText) as VaultBlob;
+  const salt = fromB64(blob.salt);
+  const key = await deriveKey(pass, salt, blob.iter);
+  try {
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromB64(blob.iv) }, key, fromB64(blob.data));
+    return { session: { key, salt }, data: JSON.parse(dec.decode(plain)) as AppData };
+  } catch {
+    throw new Error('Wrong PIN');
+  }
+}
+
+/** Makes a session (e.g. the account's) the local one: rewrites the local vault with it. */
+export async function adoptSession(session: Session, data: AppData, kind: 'pin' | 'password', pinLength: number) {
+  await writeVault(session, data);
+  setMeta({ kind, pinLength });
+}
+
+/** A stable random id for this device (not secret). */
+export function deviceId() {
+  let id = getItem('ledgerly.device');
+  if (!id) {
+    id = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    setItem('ledgerly.device', id);
+  }
+  return id;
+}
+
+export const store = { get: getItem, set: setItem, remove: removeItem };

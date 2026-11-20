@@ -12,6 +12,8 @@ import { biometricAvailable, biometricEnabled, disableBiometric, enableBiometric
 import { autoBackupNow, canSaveToPhone, FOLDER, saveBackupToPhone } from '../backup';
 import { askNotificationPermission, canNotify, notificationPermission, notifyOf } from '../notify';
 import { download, initials, resizeImage, toCsv, uid } from '../utils';
+import { CloudSection, DriveRows } from './Cloud';
+import { afterPasscodeChange, beforePasscodeChange } from '../cloud/sync';
 
 export const APP_VERSION = __APP_VERSION__;
 
@@ -122,6 +124,8 @@ export function Profile() {
           }}
         />
       </section>
+
+      <CloudSection />
 
       {/* ---------- appearance ---------- */}
       <section className="section">
@@ -385,6 +389,7 @@ export function Profile() {
             </span>
             <Icon name="chevR" />
           </button>
+          <DriveRows onRestored={lock} />
           <button className="row" onClick={() => restoreRef.current?.click()}>
             <IconTile icon="upload" color="#7048E8" />
             <span className="row-main">
@@ -463,8 +468,10 @@ export function Profile() {
         <PasscodeSheet
           onClose={() => setSheet(null)}
           onDone={async (pass, kind) => {
+            await beforePasscodeChange();
             setSession(await changePasscode(pass, kind, data));
             await refreshBiometric(pass);
+            setTimeout(() => afterPasscodeChange(), 300);
             setSheet(null);
             toast(kind === 'pin' ? 'PIN changed' : 'Password changed');
           }}

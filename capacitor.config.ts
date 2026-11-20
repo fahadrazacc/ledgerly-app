@@ -8,6 +8,8 @@ const config: CapacitorConfig = {
   plugins: {
     SystemBars: { insetsHandling: 'css', initialViewportFitValueHint: 'cover' },
     LocalNotifications: { smallIcon: 'ic_stat_ledgerly', iconColor: '#3B5BDB' },
+    // Native Google sign-in on Android; the Firebase JS SDK then signs in with the returned token.
+    FirebaseAuthentication: { skipNativeAuth: true, providers: ['google.com'] },
   },
 };
 

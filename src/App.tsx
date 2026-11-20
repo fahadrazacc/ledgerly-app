@@ -13,6 +13,8 @@ import { Dashboard } from './screens/Dashboard';
 import { Avatar } from './screens/Profile';
 import { useWide } from './charts';
 import { useStore } from './store';
+import { initCloud, useSync } from './cloud/sync';
+import { useEffect } from 'react';
 import { Home } from './screens/Home';
 import { Records } from './screens/Records';
 import { AddRecord } from './screens/AddRecord';
@@ -26,6 +28,9 @@ export default function App() {
   const [open, setOpen] = useState<{ session: Session; data: AppData } | null>(null);
   const onOpen = useCallback((session: Session, data: AppData) => setOpen({ session, data: normalize(data) }), []);
   const onLock = useCallback(() => setOpen(null), []);
+  useEffect(() => {
+    initCloud().catch(() => undefined);
+  }, []);
 
   return (
     <>
@@ -60,6 +65,7 @@ function Shell() {
   const { path, params } = useRoute();
   const wide = useWide();
   const { data, lock } = useStore();
+  const sync = useSync();
   const showNav = path !== 'add';
 
   let screen;
@@ -131,7 +137,7 @@ function Shell() {
                     <span className="row-title" style={{ fontSize: 13 }}>
                       {data.settings.name}
                     </span>
-                    <span className="row-sub">{data.settings.email || 'View profile'}</span>
+                    <span className="row-sub">{sync.user ? (sync.status === 'synced' ? 'Synced' : sync.status === 'syncing' ? 'Syncing…' : sync.status === 'needs-pass' ? 'Sync paused' : sync.user.email) : data.settings.email || 'View profile'}</span>
                   </span>
                 </a>
                 <button className="side-logout" onClick={lock}>

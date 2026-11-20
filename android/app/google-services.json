@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "704765692147",
+    "project_id": "ledgerly-f2170",
+    "storage_bucket": "ledgerly-f2170.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:704765692147:android:1132928c251b067a23cf86",
+        "android_client_info": {
+          "package_name": "com.ledgerly.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "704765692147-ms59j0ur50menh2nvfd95aflp16jiraq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDR5NBjJnZlzIQGVgPG_6CjixJw4lP7YtY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "704765692147-ms59j0ur50menh2nvfd95aflp16jiraq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

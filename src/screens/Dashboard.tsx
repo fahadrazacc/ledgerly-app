@@ -1,6 +1,7 @@
 // Wide-screen (web) home: KPIs and charts.
 import { Icon } from '../icons';
 import { useStore } from '../store';
+import { SyncBanner } from './Cloud';
 import { href } from '../router';
 import { CatTile, Empty, Progress } from '../ui';
 import { CumulativeLine, Donut, HBars, PairBars } from '../charts';
@@ -100,6 +101,7 @@ export function Dashboard() {
         </div>
       </header>
 
+      <SyncBanner />
       <div className="kpis">
         <div className="kpi dark-card">
           <span className="dark-muted">Total balance</span>
