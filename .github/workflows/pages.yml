@@ -27,9 +27,14 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci && npm run build
+      - name: Website at the root, web app under /app
+        run: |
+          mkdir -p public_site
+          cp -R site/. public_site/
+          cp -R dist public_site/app
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: public_site
       - id: deployment
         uses: actions/deploy-pages@v4

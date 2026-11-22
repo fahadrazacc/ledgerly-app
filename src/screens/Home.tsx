@@ -2,7 +2,6 @@ import { Icon } from '../icons';
 import { useStore } from '../store';
 import { SyncBanner } from './Cloud';
 import { EventsHomeCard } from './Events';
-import { InsightsHomeCard } from './Insights';
 import { href } from '../router';
 import { AccountTile, CatTile, Empty, IconTile, Progress } from '../ui';
 import { upcoming } from '../notify';
@@ -40,6 +39,9 @@ export function Home() {
           </div>
         </a>
         <div className="head-actions">
+          <a className="btn-icon" aria-label="AI insights" title="AI insights" href={href('insights')}>
+            <Icon name="sparkle" />
+          </a>
           <a className="btn-icon" aria-label={`Payment reminders${dueCount ? `, ${dueCount} due` : ''}`} href={href('reminders')}>
             <Icon name="bell" />
             {dueCount > 0 && <span className="bell-dot">{dueCount}</span>}
@@ -123,7 +125,6 @@ export function Home() {
             </section>
           )}
 
-          <InsightsHomeCard />
           <EventsHomeCard />
 
           <section className="section">

@@ -12,7 +12,18 @@ import { friendly, type Remote } from '../cloud/backend';
 
 export function Lock({ onOpen }: { onOpen: (s: Session, d: AppData) => void }) {
   const [mode, setMode] = useState<'unlock' | 'setup'>(hasVault() ? 'unlock' : 'setup');
-  return mode === 'unlock' ? <Unlock onOpen={onOpen} onReset={() => setMode('setup')} /> : <Setup onOpen={onOpen} onRestored={() => setMode('unlock')} />;
+  const [openSignIn, setOpenSignIn] = useState(false);
+  return mode === 'unlock' ? (
+    <Unlock
+      onOpen={onOpen}
+      onReset={(signIn) => {
+        setOpenSignIn(signIn);
+        setMode('setup');
+      }}
+    />
+  ) : (
+    <Setup onOpen={onOpen} onRestored={() => setMode('unlock')} startSignIn={openSignIn} />
+  );
 }
 
 function Logo() {
@@ -23,7 +34,7 @@ function Logo() {
   );
 }
 
-function Unlock({ onOpen, onReset }: { onOpen: (s: Session, d: AppData) => void; onReset: () => void }) {
+function Unlock({ onOpen, onReset }: { onOpen: (s: Session, d: AppData) => void; onReset: (signIn: boolean) => void }) {
   const meta = getMeta();
   const isPin = meta.kind === 'pin';
   const len = meta.pinLength;
@@ -96,18 +107,53 @@ function Unlock({ onOpen, onReset }: { onOpen: (s: Session, d: AppData) => void;
     if (isPin && pass.length === len) tryOpen(pass);
   }, [pass, len, isPin, tryOpen]);
 
-  const logOut = async () => {
-    const signedIn = !!syncState().user;
-    const msg = signedIn
-      ? `Log out of ${syncState().user?.email ?? 'your account'} on this device? Your synced data stays in your account, and you can sign in again or use another account. You'll still need your Ledgerly ${isPin ? 'PIN' : 'password'} to open it.`
-      : `Log out on this device? You're not signed in to an account, so the data on this device will be removed. You can restore it later only from a backup file.`;
-    if (await ask(msg, { ok: 'Log out' })) {
-      wipeVault();
-      await disableBiometric();
-      if (signedIn) await signOut().catch(() => undefined);
-      onReset();
-    }
+  const [forgot, setForgot] = useState(false);
+  const kindName = isPin ? 'PIN' : 'password';
+
+  /** Removes this device's copy (it can't be opened without the PIN). Synced data stays in the account. */
+  const leave = async (signIn: boolean) => {
+    const user = syncState().user;
+    const msg = user
+      ? `This removes Ledgerly's data from this device. Your synced data stays in ${user.email ?? 'your account'}.`
+      : `You're not signed in to an account, so the data on this device will be removed. You can only get it back from a backup file.`;
+    if (!(await ask(msg, { ok: signIn ? 'Continue' : 'Log out' }))) return;
+    wipeVault();
+    await disableBiometric();
+    if (user) await signOut().catch(() => undefined);
+    onReset(signIn);
   };
+
+  if (forgot)
+    return (
+      <main className="lock">
+        <Logo />
+        <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 800 }}>Forgot your {kindName}?</h1>
+          <span className="muted" style={{ fontSize: 14, lineHeight: 1.5 }}>
+            Your data is encrypted with your {kindName}, so it can't be reset or opened without it. You can log out of this device, or log in with another account.
+          </span>
+        </div>
+        {syncState().user && (
+          <div className="note" style={{ width: '100%' }}>
+            <Icon name="user" size={18} />
+            <span>Signed in as {syncState().user?.email}. Your synced data stays in this account.</span>
+          </div>
+        )}
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <button className="btn primary block" onClick={() => leave(true)}>
+            <Icon name="user" size={18} />
+            Log in with another account
+          </button>
+          <button className="btn secondary block" onClick={() => leave(false)} style={{ color: 'var(--exp)' }}>
+            <Icon name="lock" size={18} />
+            Log out
+          </button>
+          <button className="btn secondary block" onClick={() => setForgot(false)}>
+            I remember it: back to {kindName}
+          </button>
+        </div>
+      </main>
+    );
 
   return (
     <main className="lock">
@@ -160,15 +206,15 @@ function Unlock({ onOpen, onReset }: { onOpen: (s: Session, d: AppData) => void;
           Use {bioName()}
         </button>
       )}
-      <button className="link" onClick={logOut}>
-        Forgot your {isPin ? 'PIN' : 'password'} or need another account? Log out
+      <button className="link" onClick={() => setForgot(true)}>
+        Forgot {isPin ? 'PIN' : 'password'}?
       </button>
       <span className="muted small">Ledgerly {__APP_VERSION__}</span>
     </main>
   );
 }
 
-function Setup({ onOpen, onRestored }: { onOpen: (s: Session, d: AppData) => void; onRestored: () => void }) {
+function Setup({ onOpen, onRestored, startSignIn = false }: { onOpen: (s: Session, d: AppData) => void; onRestored: () => void; startSignIn?: boolean }) {
   const [name, setName] = useState('');
   const [currency, setCurrency] = useState('Rs');
   const [kind, setKind] = useState<'pin' | 'password'>('pin');
@@ -179,7 +225,7 @@ function Setup({ onOpen, onRestored }: { onOpen: (s: Session, d: AppData) => voi
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const sync = useSync();
-  const [authOpen, setAuthOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(startSignIn);
   const [remote, setRemote] = useState<Remote | null>(null);
   const [checking, setChecking] = useState(false);
 

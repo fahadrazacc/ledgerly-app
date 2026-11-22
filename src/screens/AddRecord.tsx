@@ -11,6 +11,12 @@ import { evaluate, hasOp, press as calcPress } from '../calc';
 import { budgetAlert, nextDue, notifyNow } from '../notify';
 import { toast } from '../toast';
 
+const timeLabelOf = (hhmm: string) => {
+  const [h, m] = hhmm.split(':').map(Number);
+  if (Number.isNaN(h)) return '';
+  return new Date(2000, 0, 1, h, m).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+};
+
 const inEvent = (e: { start: string; end?: string }, day: string) => day >= e.start && day <= (e.end ?? e.start);
 
 const COLORS: Record<RecordType, string> = { expense: 'var(--exp)', income: 'var(--inc)', transfer: 'var(--accent)' };
@@ -42,7 +48,7 @@ export function AddRecord({ id, reminderId, from, presetType, presetEvent }: { i
   const [day, setDay] = useState(toDateInput(startDate));
   const [time, setTime] = useState(timeOf(startDate));
   const [note, setNote] = useState(existing?.note ?? reminder?.title ?? '');
-  const [sheet, setSheet] = useState<null | 'cat' | 'acc' | 'to' | 'newcat' | 'event'>(null);
+  const [sheet, setSheet] = useState<null | 'cat' | 'acc' | 'to' | 'newcat' | 'event' | 'details'>(null);
   const events = (data.events ?? []).filter((e) => !e.archived || e.id === existing?.eventId);
   const autoEvent = (d: string) => events.find((e) => e.autoAdd && !e.archived && inEvent(e, d))?.id;
   const [eventId, setEventId] = useState<string | undefined>(existing ? existing.eventId : (presetEvent ?? autoEvent(toDateInput(startDate))));
@@ -223,7 +229,7 @@ export function AddRecord({ id, reminderId, from, presetType, presetEvent }: { i
         )}
       </div>
 
-      <div className="dt" aria-label="Date and time">
+      <div className="dt">
         <label className="dt-field">
           <Icon name="calendar" size={16} />
           <input
@@ -237,24 +243,19 @@ export function AddRecord({ id, reminderId, from, presetType, presetEvent }: { i
             }}
           />
         </label>
-        <label className="dt-field">
-          <Icon name="clock" size={16} />
-          <input type="time" aria-label="Time" value={time} onChange={(e) => e.target.value && setTime(e.target.value)} />
-        </label>
-      </div>
-
-      <div className="note-row">
-        <label className="pick-btn compact">
-          <Icon name="note" size={18} />
-          <input type="text" placeholder="Add a note" aria-label="Note" value={note} onChange={(e) => setNote(e.target.value)} maxLength={80} style={{ color: 'var(--ink)' }} />
-        </label>
-        <button className="pick-btn compact" onClick={() => setSheet('event')} aria-label="Event" style={ev ? { color: ev.color } : undefined}>
-          <Icon name={ev?.icon ?? 'plane'} size={18} />
-          <span className="pick-value" style={{ color: ev ? ev.color : 'var(--muted)', fontWeight: ev ? 700 : 600 }}>
-            {ev ? ev.name : 'Event'}
+        <button className="pick-btn compact more-btn" onClick={() => setSheet('details')} aria-label="More details: time and event">
+          <Icon name="settings" size={18} />
+          <span className="row-main">
+            <span className="pick-value" style={{ color: 'var(--ink)' }}>More details</span>
+            <span className="more-sub">{[timeLabelOf(time), ev?.name].filter(Boolean).join(' · ')}</span>
           </span>
         </button>
       </div>
+
+      <label className="pick-btn compact">
+        <Icon name="note" size={18} />
+        <input type="text" placeholder="Add a note" aria-label="Note" value={note} onChange={(e) => setNote(e.target.value)} maxLength={80} style={{ color: 'var(--ink)' }} />
+      </label>
 
       {error && (
         <div className="error" role="alert" style={{ textAlign: 'center' }}>
@@ -284,15 +285,44 @@ export function AddRecord({ id, reminderId, from, presetType, presetEvent }: { i
         </button>
       </div>
 
+      {sheet === 'details' && (
+        <Sheet title="More details (optional)" onClose={() => setSheet(null)}>
+          <p className="muted small" style={{ margin: 0 }}>
+            Nothing here is required. Change the time, or put this record in an event like a trip or wedding.
+          </p>
+          <label className="field">
+            <span>Time</span>
+            <div className="dt-field" style={{ border: '1px solid var(--border)' }}>
+              <Icon name="clock" size={16} />
+              <input type="time" aria-label="Time" value={time} onChange={(e) => e.target.value && setTime(e.target.value)} />
+            </div>
+          </label>
+          <div className="field">
+            <span>Event</span>
+            <button className="pick-btn" onClick={() => setSheet('event')} style={{ border: '1px solid var(--border)' }}>
+              {ev ? <IconTile icon={ev.icon} color={ev.color} size={34} /> : <IconTile icon="plane" color="#868E96" size={34} />}
+              <span className="row-main">
+                <span className="pick-value">{ev ? ev.name : 'No event'}</span>
+                <span className="pick-label">{ev ? 'Tap to change' : 'Trips, weddings and other occasions'}</span>
+              </span>
+              <Icon name="chevR" />
+            </button>
+          </div>
+          <button className="btn primary block" onClick={() => setSheet(null)}>
+            Done
+          </button>
+        </Sheet>
+      )}
+
       {sheet === 'event' && (
-        <Sheet title="Add to an event" onClose={() => setSheet(null)}>
+        <Sheet title="Add to an event" onClose={() => setSheet('details')}>
           <div className="card list">
             <button
               className="row"
               onClick={() => {
                 setEventId(undefined);
                 setEventTouched(true);
-                setSheet(null);
+                setSheet('details');
               }}
             >
               <IconTile icon="close" color="#868E96" />
@@ -314,7 +344,7 @@ export function AddRecord({ id, reminderId, from, presetType, presetEvent }: { i
                   onClick={() => {
                     setEventId(e.id);
                     setEventTouched(true);
-                    setSheet(null);
+                    setSheet('details');
                   }}
                 >
                   <IconTile icon={e.icon} color={e.color} />

@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ledgerly — a private money manager for your phone and the web</title>
+  <meta name="description" content="Ledgerly tracks spending, budgets, accounts, trips and bills in one place. Encrypted with your PIN, synced between Android, iPhone and the web, with AI insights. Free." />
+  <meta name="theme-color" content="#16204A" />
+  <meta property="og:title" content="Ledgerly — every rupee, accounted for" />
+  <meta property="og:description" content="Spending, budgets, events and AI insights. Encrypted with your PIN. Android, iPhone and web." />
+  <meta property="og:image" content="img/desk-dashboard.webp" />
+  <link rel="icon" type="image/png" href="img/icon-192.png" />
+  <link rel="apple-touch-icon" href="img/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script>
+    // Opened from a home-screen install? Go straight to the app.
+    if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) location.replace('app/');
+  </script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="top" id="top">
+    <div class="wrap top-in">
+      <a class="brand" href="#top" aria-label="Ledgerly home">
+        <img src="img/icon-192.png" alt="" width="34" height="34" />
+        <span>Ledgerly</span>
+      </a>
+      <nav class="top-nav" aria-label="Sections">
+        <a href="#features">Features</a>
+        <a href="#security">Privacy</a>
+        <a href="#download">Download</a>
+        <a href="#faq">Questions</a>
+      </nav>
+      <div class="top-cta">
+        <a class="btn ghost" href="app/" data-open-label>Log in</a>
+        <a class="btn solid" href="#download">Get Ledgerly</a>
+      </div>
+      <button class="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+      </button>
+    </div>
+    <div class="mobile-menu" id="mobile-menu" hidden>
+      <a href="#features">Features</a>
+      <a href="#security">Privacy</a>
+      <a href="#download">Download</a>
+      <a href="#faq">Questions</a>
+      <a class="btn solid" href="app/" data-open-label>Log in to the web app</a>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- ================= HERO ================= -->
+    <section class="hero">
+      <div class="wrap hero-in">
+        <div class="hero-copy">
+          <h1>Every rupee,<br />accounted for.</h1>
+          <p class="lede">Ledgerly is a money manager for the way you actually spend: cash, bank, mobile wallet, trips and the bills that come every month. It keeps your records encrypted with your PIN and in step across your phone and computer.</p>
+          <div class="hero-actions">
+            <a class="btn solid big" href="app/">Open the web app</a>
+            <a class="btn light big" href="#download">Download for Android or iPhone</a>
+          </div>
+          <ul class="facts" aria-label="Key facts">
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>Encrypted with your PIN</li>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2" /><path d="M11 18h2" /></svg>Android, iPhone and web</li>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>Free, no ads</li>
+          </ul>
+        </div>
+
+        <div class="hero-visual" aria-hidden="true">
+          <div class="ledger">
+            <div class="ledger-head">
+              <span>Date</span><span>Entry</span><span class="num">Amount</span>
+            </div>
+            <ol class="ledger-rows">
+              <li style="--i:0"><span>01 Nov</span><span>Salary</span><span class="num in">+185,000</span></li>
+              <li style="--i:1"><span>02 Nov</span><span>Rent</span><span class="num out">−45,000</span></li>
+              <li style="--i:2"><span>05 Nov</span><span>Electricity bill</span><span class="num out">−8,420</span></li>
+              <li style="--i:3"><span>12 Nov</span><span>Groceries</span><span class="num out">−5,200</span></li>
+              <li style="--i:4"><span>19 Nov</span><span>Hunza trip · fuel</span><span class="num out">−9,200</span></li>
+              <li style="--i:5" class="total"><span></span><span>Saved</span><span class="num in">+117,180</span></li>
+            </ol>
+          </div>
+          <figure class="phone hero-phone">
+            <img src="img/phone-home.webp" alt="" width="585" height="1266" fetchpriority="high" />
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PLATFORMS ================= -->
+    <section class="platforms">
+      <div class="wrap">
+        <div class="section-intro">
+          <h2>One ledger, wherever you open it</h2>
+          <p>Add an expense on your phone at the shop; see it on your laptop a few seconds later. Sign in once on each device and Ledgerly keeps them in step.</p>
+        </div>
+        <figure class="browser">
+          <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i><span>fahadrazacc.github.io/ledgerly-app/app</span></div>
+          <img src="img/desk-dashboard.webp" alt="Ledgerly web dashboard with monthly totals, AI insights, spending chart, category breakdown and budgets" width="1800" height="1125" loading="lazy" />
+        </figure>
+        <ul class="platform-list">
+          <li>
+            <h3>On the web</h3>
+            <p>A full dashboard for a bigger screen: charts, reports and every setting in the sidebar.</p>
+            <a href="app/">Open the web app</a>
+          </li>
+          <li>
+            <h3>On Android</h3>
+            <p>Fingerprint unlock, reminders as notifications, and backups saved to your phone.</p>
+            <a href="#download-android">Get the Android app</a>
+          </li>
+          <li>
+            <h3>On iPhone</h3>
+            <p>Add it to your Home Screen today; a native app with Face ID is on the way.</p>
+            <a href="#download-iphone">Use it on iPhone</a>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ================= FEATURES ================= -->
+    <section class="features" id="features">
+      <div class="wrap">
+        <div class="section-intro">
+          <h2>Built for everyday money</h2>
+          <p>Fast to add to, honest about where things stand, and quiet unless something needs your attention.</p>
+        </div>
+
+        <article class="feature">
+          <figure class="phone"><img src="img/phone-add.webp" alt="Adding an expense with the calculator keypad: 1200 + 350 × 2 equals Rs 1,900" width="585" height="1266" loading="lazy" /></figure>
+          <div class="feature-copy">
+            <h3>Add a record in a few taps</h3>
+            <p>Type the amount, pick a category and save. The keypad doubles as a calculator, so splitting a bill or adding up a receipt happens right there.</p>
+            <ul class="ticks">
+              <li>Expenses, income and transfers between your own accounts</li>
+              <li>Your own categories, with icons and colours</li>
+              <li>Date, time and a note on every record</li>
+              <li>Search and view by day, week, month, year or any dates</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="feature flip">
+          <figure class="phone"><img src="img/phone-budgets.webp" alt="Budgets screen: 93% of the monthly budget used, with category budgets and amounts left" width="585" height="1266" loading="lazy" /></figure>
+          <div class="feature-copy">
+            <h3>Budgets that speak up early</h3>
+            <p>Set one limit for the month and others for the categories you want to watch. Ledgerly tells you how much you can still spend per day, and alerts you at 80% and when you go over.</p>
+            <ul class="ticks">
+              <li>Month-end forecast based on your real pace</li>
+              <li>Category budgets with progress you can read at a glance</li>
+              <li>Payment reminders for rent, bills and fees, with one-tap “Pay”</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="feature">
+          <figure class="phone"><img src="img/phone-event.webp" alt="Hunza trip event: Rs 38,500 spent over 7 days, Rs 81,500 of the budget left, spending by category" width="585" height="1266" loading="lazy" /></figure>
+          <div class="feature-copy">
+            <h3>Trips, weddings and big occasions</h3>
+            <p>Create an event with dates and a budget, and everything you spend during it is grouped automatically. Afterwards you know exactly what the trip or the wedding cost, per day and by category.</p>
+            <ul class="ticks">
+              <li>Records dated during the event join it on their own</li>
+              <li>Move any record in or out with one tap</li>
+              <li>Budget left and cost per day while it’s happening</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="feature flip">
+          <figure class="phone"><img src="img/phone-insights.webp" alt="AI insights: month-end forecast and an AI-written summary with what stands out and tips" width="585" height="1266" loading="lazy" /></figure>
+          <div class="feature-copy">
+            <h3>Insights, and answers when you ask</h3>
+            <p>Ledgerly notices when a category runs higher than usual, when a budget is likely to run out, and which payments repeat every month. Add your free Gemini key and it also writes a monthly summary and answers questions about your money.</p>
+            <ul class="ticks">
+              <li>Smart insights are worked out on your device</li>
+              <li>The AI only sees totals, not your notes, unless you allow it</li>
+              <li>Ask things like “Where can I cut back this month?”</li>
+            </ul>
+          </div>
+        </article>
+
+        <div class="more">
+          <h3>And the rest you’d expect</h3>
+          <dl class="more-list">
+            <div><dt>Accounts with their own balance</dt><dd>Cash, bank, wallet, card or savings. Your own icon or picture, reorder them, switch old ones off.</dd></div>
+            <div><dt>Debts and loans</dt><dd>Money you lent or borrowed, with due dates and a reminder on the day.</dd></div>
+            <div><dt>Reports and averages</dt><dd>Spending by category, income against expenses, and your average per day, week, month or year.</dd></div>
+            <div><dt>Hide amounts</dt><dd>One tap turns every figure into dots when you’re in public.</dd></div>
+            <div><dt>Dark mode</dt><dd>Follows your phone, or choose light or dark yourself.</dd></div>
+            <div><dt>Backups and export</dt><dd>Encrypted backups to your phone or Google Drive, and CSV export for Excel.</dd></div>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= SECURITY ================= -->
+    <section class="security" id="security">
+      <div class="wrap security-in">
+        <div class="security-copy">
+          <h2>Your records are locked before they leave your phone</h2>
+          <p>Your PIN or password creates the key that encrypts everything, on the device itself. What gets saved and synced is scrambled data. The cloud stores it, but can’t read it.</p>
+          <ol class="flow">
+            <li><strong>You unlock with your PIN</strong><span>or fingerprint / Face ID. The key is made from your PIN and never stored as plain text.</span></li>
+            <li><strong>Records are encrypted on the device</strong><span>with AES-256-GCM, the same standard banks and messengers use.</span></li>
+            <li><strong>Only the locked copy is synced</strong><span>to your account and your Google Drive backups. Opening it needs your PIN.</span></li>
+          </ol>
+          <p class="fineprint">Because only you hold the key, nobody can reset it for you. If you forget your PIN, your data can’t be opened, so turn on fingerprint or Face ID and keep a backup.</p>
+        </div>
+        <figure class="phone security-phone"><img src="img/phone-lock.webp" alt="Ledgerly lock screen asking for the PIN" width="585" height="1266" loading="lazy" /></figure>
+      </div>
+    </section>
+
+    <!-- ================= DOWNLOAD ================= -->
+    <section class="download" id="download">
+      <div class="wrap">
+        <div class="section-intro">
+          <h2>Get Ledgerly</h2>
+          <p>Free on every device. Sign in with the same account on each one to keep them in sync.</p>
+        </div>
+        <div class="dl-grid">
+          <section class="dl" id="download-android" aria-labelledby="dl-android">
+            <div class="dl-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 10h10v8a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1zM7 10a5 5 0 0 1 10 0M9 7 7.5 4.5M15 7l1.5-2.5M4 11v5M20 11v5M10 19v2M14 19v2" /></svg></div>
+            <h3 id="dl-android">Android</h3>
+            <p>Download the app file and install it. Updates install over the top and keep your data.</p>
+            <a class="btn solid" href="https://github.com/fahadrazacc/ledgerly-app/releases/latest/download/Ledgerly-debug.apk">Download for Android</a>
+            <ol class="steps">
+              <li>Open the downloaded <em>Ledgerly-debug.apk</em>.</li>
+              <li>If asked, allow your browser to install unknown apps.</li>
+              <li>Tap Install, open Ledgerly and sign in.</li>
+            </ol>
+            <a class="sub-link" href="https://github.com/fahadrazacc/ledgerly-app/releases">All Android versions</a>
+          </section>
+
+          <section class="dl" id="download-iphone" aria-labelledby="dl-iphone">
+            <div class="dl-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5" /><path d="M11 18h2" /></svg></div>
+            <h3 id="dl-iphone">iPhone</h3>
+            <p>Use Ledgerly on iPhone today from Safari. It opens from your Home Screen like an app and syncs with your account.</p>
+            <a class="btn solid" href="app/">Open in Safari</a>
+            <ol class="steps">
+              <li>Open this link in <em>Safari</em>.</li>
+              <li>Tap Share, then Add to Home Screen.</li>
+              <li>Open Ledgerly from the new icon and sign in.</li>
+            </ol>
+            <p class="sub-note">A native iPhone app with Face ID is coming to TestFlight. Developers can <a href="https://github.com/fahadrazacc/ledgerly-app/releases?q=ios-build">sideload the current build</a>.</p>
+          </section>
+
+          <section class="dl" aria-labelledby="dl-web">
+            <div class="dl-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8M12 17v4" /></svg></div>
+            <h3 id="dl-web">Web</h3>
+            <p>Nothing to install. Works in Chrome, Edge, Safari and Firefox, with the full dashboard on a computer.</p>
+            <a class="btn solid" href="app/" data-open-label>Log in to the web app</a>
+            <ol class="steps">
+              <li>Create an account with email or Google.</li>
+              <li>Choose a PIN to encrypt your data.</li>
+              <li>Add your first record.</li>
+            </ol>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= FAQ ================= -->
+    <section class="faq" id="faq">
+      <div class="wrap faq-in">
+        <h2>Questions</h2>
+        <div class="faq-list">
+          <details>
+            <summary>Is Ledgerly free?</summary>
+            <p>Yes. There are no ads and no paid tier. The optional AI summary uses your own free Gemini key from Google.</p>
+          </details>
+          <details>
+            <summary>Where is my data stored?</summary>
+            <p>On your device, encrypted with your PIN. If you sign in, an encrypted copy is kept in your account so your other devices can sync. Google Drive backups are also encrypted.</p>
+          </details>
+          <details>
+            <summary>Do I need an account?</summary>
+            <p>No. You can use Ledgerly on one device without signing in. An account is only needed to sync between devices, and you can sign in with email or Google.</p>
+          </details>
+          <details>
+            <summary>What happens if I forget my PIN?</summary>
+            <p>Your data is encrypted with your PIN, so it can’t be opened without it, by us or anyone else. Turn on fingerprint or Face ID so you rarely need to type it, and keep a backup. On the lock screen you can log out and start again, or sign in to another account.</p>
+          </details>
+          <details>
+            <summary>Which currencies does it support?</summary>
+            <p>Rupees by default, and you can switch the symbol to $, €, £, AED, SAR or ₹ in settings.</p>
+          </details>
+          <details>
+            <summary>What does the AI see?</summary>
+            <p>Only a short summary of totals: monthly income and spending, category totals, budgets, account balances and upcoming bills. Record notes are left out unless you turn them on. Smart insights don’t use AI at all; they’re worked out on your device.</p>
+          </details>
+          <details>
+            <summary>Why does Android warn me when installing?</summary>
+            <p>Ledgerly is installed from this website rather than the Play Store, so Android asks you to confirm. Allow it once for your browser. A Play Store release is planned.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot-in">
+      <div class="foot-brand">
+        <a class="brand" href="#top"><img src="img/icon-192.png" alt="" width="30" height="30" /><span>Ledgerly</span></a>
+        <p>A private money manager for Android, iPhone and the web.</p>
+      </div>
+      <nav class="foot-nav" aria-label="Footer">
+        <a href="app/">Web app</a>
+        <a href="#download-android">Android</a>
+        <a href="#download-iphone">iPhone</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="https://github.com/fahadrazacc/ledgerly-app">Source code</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="main.js" defer></script>
+</body>
+</html>

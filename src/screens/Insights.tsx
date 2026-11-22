@@ -285,10 +285,10 @@ export function InsightsHomeCard() {
 /** Panel for the web dashboard. */
 export function InsightsPanel() {
   const { data } = useStore();
-  const list = useMemo(() => computeInsights(data).slice(0, 4), [data]);
+  const list = useMemo(() => computeInsights(data).slice(0, 6), [data]);
   const summary = data.settings.ai?.lastSummary;
   return (
-    <section className="card panel w2">
+    <section className="card panel w2 ai-panel">
       <div className="panel-head">
         <h2 className="h2" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span className="ai-badge">
@@ -302,7 +302,7 @@ export function InsightsPanel() {
       </div>
       {summary && (
         <div className="md-preview">
-          <Md text={summary.text.split('\n').filter((l) => l.trim()).slice(0, 2).join('\n')} />
+          <Md text={summary.text.split('\n').find((l) => l.trim() && !l.trim().startsWith('-') && !l.trim().startsWith('**')) ?? ''} />
         </div>
       )}
       <div className="list insight-grid">

@@ -2,7 +2,7 @@ import { useStore } from '../store';
 import type { Txn } from '../types';
 import { CatTile, IconTile } from '../ui';
 import { href } from '../router';
-import { money, timeLabel } from '../utils';
+import { money } from '../utils';
 
 const dayShort = (iso: string) => {
   const d = new Date(iso);
@@ -38,7 +38,7 @@ export function RecordRow({ t, from }: { t: Txn; from: string; showTime?: boolea
       <span className="row-end">
         <span className={`amt ${isTransfer ? '' : t.type === 'income' ? 'inc' : 'exp'}`}>{isTransfer ? money(t.amount, cur) : money(amount, cur, true)}</span>
         <span className="muted" style={{ fontSize: 11, whiteSpace: 'nowrap' }}>
-          {dayShort(t.date)}, {timeLabel(t.date)}
+          {dayShort(t.date)}
         </span>
       </span>
     </a>

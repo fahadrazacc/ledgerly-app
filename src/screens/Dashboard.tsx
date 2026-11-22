@@ -2,7 +2,6 @@
 import { Icon } from '../icons';
 import { useStore } from '../store';
 import { SyncBanner } from './Cloud';
-import { InsightsPanel } from './Insights';
 import { href } from '../router';
 import { CatTile, Empty, Progress } from '../ui';
 import { CumulativeLine, Donut, HBars, PairBars } from '../charts';
@@ -91,6 +90,9 @@ export function Dashboard() {
           </h1>
         </div>
         <div className="head-actions">
+          <a className="btn-icon" aria-label="AI insights" title="AI insights" href={href('insights')}>
+            <Icon name="sparkle" />
+          </a>
           <button className="btn secondary small" onClick={toggleHidden} aria-pressed={hidden}>
             <Icon name={hidden ? 'eyeOff' : 'eye'} size={18} />
             {hidden ? 'Show amounts' : 'Hide amounts'}
@@ -139,8 +141,7 @@ export function Dashboard() {
       </div>
 
       <div className="dash">
-        <InsightsPanel />
-        <section className="card w2 panel">
+        <section className="card w2 panel spend-panel">
           <div className="panel-head">
             <div>
               <h2 className="h2">Spending so far</h2>

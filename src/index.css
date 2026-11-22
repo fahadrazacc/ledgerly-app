@@ -295,7 +295,8 @@ button[aria-label$=" up"] svg { transform: rotate(180deg); }
 .kpi { display: flex; flex-direction: column; gap: 8px; padding: 20px; min-width: 0; }
 .kpi-value { font-size: clamp(20px, 2vw, 28px); font-weight: 800; letter-spacing: -0.4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dash { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; grid-auto-flow: row dense; align-items: stretch; }
-.dash > .panel.w2:first-child { justify-content: space-between; }
+.dash > .panel.spend-panel { justify-content: space-between; }
+.dash > .panel.ai-panel { justify-content: flex-start; }
 .dash .w2 { grid-column: span 2; }
 @media (min-width: 900px) {
   .screen { max-width: 980px; }
@@ -346,3 +347,7 @@ button[aria-label$=" up"] svg { transform: rotate(180deg); }
 .insight-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 20px; }
 .insight-grid .row { border-bottom: 1px solid var(--row-line) !important; }
 @media (max-width: 1279px) { .insight-grid { grid-template-columns: 1fr; } }
+
+.more-btn { justify-content: flex-start; text-align: left; }
+.more-btn .row-main { gap: 0; }
+.more-sub { font-size: 11px; color: var(--muted); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
