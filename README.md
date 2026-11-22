@@ -41,3 +41,23 @@ For the Play Store you'll need a signed release build (`./gradlew bundleRelease`
 - `src/store.tsx` – app state, saves encrypted on every change
 - `src/screens/` – Home, Records, AddRecord, Reports, Budgets, Accounts, Settings, Lock
 - `src/seed.ts` – default categories and the optional sample data
+
+## Website contact form
+
+The contact form on the website saves messages to the `feedback` collection in Firestore (project `ledgerly-f2170`). Read them in the Firebase console under Firestore Database → `feedback`.
+
+Add this block inside `match /databases/{database}/documents { … }` in your Firestore rules. It lets anyone create a message but nobody read, change or delete one from outside the console:
+
+```
+match /feedback/{id} {
+  allow create: if request.resource.data.keys().hasOnly(['kind', 'name', 'email', 'message', 'source', 'createdAt'])
+    && request.resource.data.kind in ['feedback', 'idea', 'problem', 'question']
+    && request.resource.data.message is string
+    && request.resource.data.message.size() > 0 && request.resource.data.message.size() <= 2000
+    && request.resource.data.name is string && request.resource.data.name.size() <= 100
+    && request.resource.data.email is string && request.resource.data.email.size() <= 200
+    && request.resource.data.source == 'website'
+    && request.resource.data.createdAt is timestamp;
+  allow read, update, delete: if false;
+}
+```

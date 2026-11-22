@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ask } from '../confirm';
 import { Icon } from '../icons';
 import { CategorySheet } from './Categories';
@@ -6,7 +6,7 @@ import { useStore } from '../store';
 import { go, href } from '../router';
 import { AccountTile, CatTile, IconTile, Segmented, Sheet } from '../ui';
 import type { AppData, RecordType, Txn } from '../types';
-import { balanceOf, money, toDateInput, uid } from '../utils';
+import { toDateInput, uid } from '../utils';
 import { evaluate, hasOp, press as calcPress } from '../calc';
 import { budgetAlert, nextDue, notifyNow } from '../notify';
 import { toast } from '../toast';
@@ -48,7 +48,7 @@ export function AddRecord({ id, reminderId, from, presetType, presetEvent }: { i
   const [day, setDay] = useState(toDateInput(startDate));
   const [time, setTime] = useState(timeOf(startDate));
   const [note, setNote] = useState(existing?.note ?? reminder?.title ?? '');
-  const [sheet, setSheet] = useState<null | 'cat' | 'acc' | 'to' | 'newcat' | 'event' | 'details'>(null);
+  const [sheet, setSheet] = useState<null | 'newcat' | 'event' | 'details'>(null);
   const events = (data.events ?? []).filter((e) => !e.archived || e.id === existing?.eventId);
   const autoEvent = (d: string) => events.find((e) => e.autoAdd && !e.archived && inEvent(e, d))?.id;
   const [eventId, setEventId] = useState<string | undefined>(existing ? existing.eventId : (presetEvent ?? autoEvent(toDateInput(startDate))));
@@ -58,8 +58,6 @@ export function AddRecord({ id, reminderId, from, presetType, presetEvent }: { i
 
   const cats = data.categories.filter((c) => c.type === (type === 'income' ? 'income' : 'expense') && (!c.archived || c.id === categoryId));
   const cat = data.categories.find((c) => c.id === categoryId);
-  const acc = data.accounts.find((a) => a.id === accountId);
-  const to = data.accounts.find((a) => a.id === toAccountId);
   const color = COLORS[type];
 
   useEffect(() => {
@@ -101,10 +99,7 @@ export function AddRecord({ id, reminderId, from, presetType, presetEvent }: { i
   function save() {
     if (!(value > 0)) return setError(evaluate(expr) === null ? 'Check the calculation' : 'Enter an amount');
     if (!accountId) return setError('Add an account first');
-    if (type !== 'transfer' && !categoryId) {
-      setSheet('cat');
-      return setError('Choose a category');
-    }
+    if (type !== 'transfer' && !categoryId) return setError('Choose a category');
     if (type === 'transfer' && (!toAccountId || toAccountId === accountId)) return setError('Pick two different accounts');
     const when = new Date(`${day}T${time || '12:00'}`);
     if (isNaN(when.getTime())) return setError('Check the date and time');
@@ -156,15 +151,30 @@ export function AddRecord({ id, reminderId, from, presetType, presetEvent }: { i
       </main>
     );
 
-  const accountButton = (label: string) => (
-    <button className="pick-btn" onClick={() => setSheet('acc')}>
-      <AccountTile account={acc} size={34} />
-      <span className="row-main">
-        <span className="pick-label">{label}</span>
-        <span className="pick-value">{acc?.name ?? 'Choose'}</span>
-      </span>
-    </button>
+  const accountStrip = (label: string, value: string, pick: (id: string) => void, exclude?: string) => (
+    <ChoiceStrip label={label} selected={value}>
+      {data.accounts
+        .filter((a) => (!a.archived || (a.id === value && a.id === existing?.accountId)) && a.id !== exclude)
+        .map((a) => (
+          <button key={a.id} type="button" className={`choice ${a.id === value ? 'on' : ''}`} aria-pressed={a.id === value} onClick={() => pick(a.id)}>
+            <AccountTile account={a} size={26} />
+            {a.name}
+            {a.archived ? ' (inactive)' : ''}
+          </button>
+        ))}
+      {accounts.length === 0 && (
+        <a className="choice" href={href('accounts')}>
+          <Icon name="plus" size={18} />
+          Add account
+        </a>
+      )}
+    </ChoiceStrip>
   );
+  const pickFrom = (id: string) => {
+    setAccountId(id);
+    setError('');
+    if (id === toAccountId) setToAccountId(accounts.find((x) => x.id !== id)?.id ?? '');
+  };
 
   return (
     <main className="screen no-nav narrow add-screen">
@@ -173,13 +183,17 @@ export function AddRecord({ id, reminderId, from, presetType, presetEvent }: { i
           <Icon name="close" />
         </a>
         <h1 className="h-small">{existing ? 'Edit record' : reminder ? `Pay: ${reminder.title}` : 'New record'}</h1>
-        {existing ? (
-          <button className="btn-icon" aria-label="Delete record" onClick={remove} style={{ color: 'var(--exp)' }}>
-            <Icon name="trash" />
+        <div className="head-actions">
+          {existing && (
+            <button className="btn-icon" aria-label="Delete record" onClick={remove} style={{ color: 'var(--exp)' }}>
+              <Icon name="trash" />
+            </button>
+          )}
+          <button className="btn small save-top" style={{ background: color }} onClick={save}>
+            <Icon name="check" size={18} stroke={2.4} />
+            Save
           </button>
-        ) : (
-          <span style={{ width: 44 }} />
-        )}
+        </div>
       </header>
 
       <Segmented<RecordType>
@@ -203,31 +217,37 @@ export function AddRecord({ id, reminderId, from, presetType, presetEvent }: { i
         </div>
       </div>
 
-      <div className="grid2" style={{ gap: 8 }}>
-        {type === 'transfer' ? (
-          <>
-            {accountButton('From account')}
-            <button className="pick-btn" onClick={() => setSheet('to')}>
-              {to ? <AccountTile account={to} size={34} /> : <IconTile icon="transfer" color="#3B5BDB" size={34} />}
-              <span className="row-main">
-                <span className="pick-label">To account</span>
-                <span className="pick-value">{to?.name ?? 'Choose'}</span>
-              </span>
+      {type === 'transfer' ? (
+        <>
+          {accountStrip('From account', accountId, pickFrom)}
+          {accountStrip('To account', toAccountId, (id) => { setToAccountId(id); setError(''); }, accountId)}
+        </>
+      ) : (
+        <>
+          <ChoiceStrip label="Category" selected={categoryId}>
+            {cats.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                className={`choice ${c.id === categoryId ? 'on' : ''}`}
+                aria-pressed={c.id === categoryId}
+                onClick={() => {
+                  setCategoryId(c.id);
+                  setError('');
+                }}
+              >
+                <CatTile cat={c} size={26} />
+                {c.name}
+              </button>
+            ))}
+            <button type="button" className="choice add" onClick={() => setSheet('newcat')}>
+              <Icon name="plus" size={18} stroke={2.2} />
+              New
             </button>
-          </>
-        ) : (
-          <>
-            <button className="pick-btn" onClick={() => setSheet('cat')}>
-              <CatTile cat={cat} size={34} />
-              <span className="row-main">
-                <span className="pick-label">Category</span>
-                <span className="pick-value">{cat?.name ?? 'Choose'}</span>
-              </span>
-            </button>
-            {accountButton('Account')}
-          </>
-        )}
-      </div>
+          </ChoiceStrip>
+          {accountStrip('Account', accountId, pickFrom)}
+        </>
+      )}
 
       <div className="dt">
         <label className="dt-field">
@@ -278,12 +298,6 @@ export function AddRecord({ id, reminderId, from, presetType, presetEvent }: { i
         ))}
       </div>
 
-      <div className="save-bar">
-        <button className="btn block" style={{ background: color, color: '#fff', height: 52, fontSize: 16 }} onClick={save}>
-          <Icon name="check" size={20} stroke={2.2} />
-          {existing ? 'Save changes' : 'Save record'}
-        </button>
-      </div>
 
       {sheet === 'details' && (
         <Sheet title="More details (optional)" onClose={() => setSheet(null)}>
@@ -366,41 +380,11 @@ export function AddRecord({ id, reminderId, from, presetType, presetEvent }: { i
         </Sheet>
       )}
 
-      {sheet === 'cat' && (
-        <Sheet title="Choose category" onClose={() => setSheet(null)}>
-          <div className="cat-grid">
-            {cats.map((c) => (
-              <button
-                key={c.id}
-                className={`cat-opt ${c.id === categoryId ? 'on' : ''}`}
-                onClick={() => {
-                  setCategoryId(c.id);
-                  setError('');
-                  setSheet(null);
-                }}
-              >
-                <CatTile cat={c} size={40} />
-                {c.name}
-              </button>
-            ))}
-            <button className="cat-opt" onClick={() => setSheet('newcat')}>
-              <span className="tile" style={{ width: 40, height: 40, background: 'var(--accent-soft)', color: 'var(--accent)' }}>
-                <Icon name="plus" size={20} stroke={2.2} />
-              </span>
-              New
-            </button>
-          </div>
-          <a className="btn secondary" href={href('categories')}>
-            Manage categories
-          </a>
-        </Sheet>
-      )}
-
       {sheet === 'newcat' && (
         <CategorySheet
           category={null}
           type={type === 'income' ? 'income' : 'expense'}
-          onClose={() => setSheet('cat')}
+          onClose={() => setSheet(null)}
           onSaved={(c) => {
             setCategoryId(c.id);
             setError('');
@@ -409,43 +393,25 @@ export function AddRecord({ id, reminderId, from, presetType, presetEvent }: { i
         />
       )}
 
-      {(sheet === 'acc' || sheet === 'to') && (
-        <Sheet title={sheet === 'to' ? 'Transfer to' : 'Choose account'} onClose={() => setSheet(null)}>
-          <div className="card list">
-            {data.accounts
-              .filter((a) => !a.archived)
-              .filter((a) => (sheet === 'to' ? a.id !== accountId : true))
-              .map((a) => (
-                <button
-                  key={a.id}
-                  className="row"
-                  onClick={() => {
-                    if (sheet === 'to') setToAccountId(a.id);
-                    else {
-                      setAccountId(a.id);
-                      if (a.id === toAccountId) setToAccountId(accounts.find((x) => x.id !== a.id)?.id ?? '');
-                    }
-                    setSheet(null);
-                  }}
-                >
-                  <AccountTile account={a} />
-                  <span className="row-main">
-                    <span className="row-title">{a.name}</span>
-                    <span className="row-sub">{money(balanceOf(data, a.id), cur)}</span>
-                  </span>
-                  {(sheet === 'to' ? toAccountId : accountId) === a.id && (
-                    <span style={{ color: 'var(--accent)' }}>
-                      <Icon name="check" />
-                    </span>
-                  )}
-                </button>
-              ))}
-          </div>
-          <a className="btn secondary" href={href('accounts')}>
-            Manage accounts
-          </a>
-        </Sheet>
-      )}
     </main>
+  );
+}
+
+/** A labelled, horizontally scrolling row of choices; keeps the selected one in view. */
+function ChoiceStrip({ label, selected, children }: { label: string; selected?: string; children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current?.querySelector<HTMLElement>('.choice.on');
+    const box = ref.current;
+    if (el && box && (el.offsetLeft < box.scrollLeft || el.offsetLeft + el.offsetWidth > box.scrollLeft + box.clientWidth))
+      box.scrollLeft = Math.max(0, el.offsetLeft - 16);
+  }, [selected]);
+  return (
+    <div className="choice-block">
+      <span className="choice-label">{label}</span>
+      <div className="choice-strip" ref={ref} role="group" aria-label={label}>
+        {children}
+      </div>
+    </div>
   );
 }
