@@ -13,6 +13,7 @@ import { autoBackupNow, canSaveToPhone, FOLDER, saveBackupToPhone } from '../bac
 import { askNotificationPermission, canNotify, notificationPermission, notifyOf } from '../notify';
 import { download, initials, resizeImage, toCsv, uid } from '../utils';
 import { CloudSection, DriveRows } from './Cloud';
+import { KeySetup } from './Insights';
 import { afterPasscodeChange, beforePasscodeChange } from '../cloud/sync';
 
 export const APP_VERSION = __APP_VERSION__;
@@ -192,6 +193,14 @@ export function Profile() {
             </span>
             <Icon name="chevR" />
           </a>
+          <a className="row" href={href('events')}>
+            <IconTile icon="plane" color="#AE3EC9" />
+            <span className="row-main">
+              <span className="row-title">Events</span>
+              <span className="row-sub wrap">Trips, weddings and other occasions</span>
+            </span>
+            <Icon name="chevR" />
+          </a>
           <a className="row" href={href('reminders')}>
             <IconTile icon="bell" color="#C2410C" />
             <span className="row-main">
@@ -261,6 +270,49 @@ export function Profile() {
             </span>
             <Switch label="Debt due date notifications" checked={n.debts} onChange={(v) => setNotify({ debts: v })} />
           </div>
+        </div>
+      </section>
+
+      {/* ---------- AI ---------- */}
+      <section className="section">
+        <h2 className="h2">AI assistant</h2>
+        <div className="card list">
+          {s.ai?.geminiKey ? (
+            <>
+              <a className="row" href={href('insights')}>
+                <IconTile icon="sparkle" color="#7048E8" />
+                <span className="row-main">
+                  <span className="row-title">AI insights</span>
+                  <span className="row-sub wrap">Gemini is connected · key ending …{s.ai.geminiKey.slice(-4)}</span>
+                </span>
+                <Icon name="chevR" />
+              </a>
+              <div className="row">
+                <IconTile icon="note" color="#495057" />
+                <span className="row-main">
+                  <span className="row-title">Share record notes with AI</span>
+                  <span className="row-sub wrap">Off: only totals by category and month are sent</span>
+                </span>
+                <Switch label="Share record notes with AI" checked={!!s.ai.includeNotes} onChange={(v) => setSettings({ ai: { ...s.ai, includeNotes: v } })} />
+              </div>
+              <button
+                className="row"
+                onClick={async () => {
+                  if (await ask('Remove the Gemini key from Ledgerly? AI summaries stop until you add a key again.', { ok: 'Remove' })) setSettings({ ai: { includeNotes: s.ai?.includeNotes } });
+                }}
+              >
+                <IconTile icon="trash" color="#C2410C" />
+                <span className="row-main">
+                  <span className="row-title exp">Remove AI key</span>
+                </span>
+                <Icon name="chevR" />
+              </button>
+            </>
+          ) : (
+            <div className="row" style={{ display: 'block' }}>
+              <KeySetup />
+            </div>
+          )}
         </div>
       </section>
 
@@ -536,7 +588,7 @@ function EditProfileSheet({ onClose }: { onClose: () => void }) {
 
 function ClearDataSheet({ onClose }: { onClose: () => void }) {
   const { data, update } = useStore();
-  const [pick, setPick] = useState({ records: false, budgets: false, debts: false, reminders: false, setup: false });
+  const [pick, setPick] = useState({ records: false, budgets: false, debts: false, reminders: false, events: false, setup: false });
   const forced = pick.setup; // resetting accounts/categories also clears what points at them
   const eff = forced ? { ...pick, records: true, budgets: true, reminders: true } : pick;
   const counts = { records: data.txns.length, budgets: data.budgets.length, debts: data.debts.length, reminders: (data.reminders ?? []).length, setup: data.accounts.length };
@@ -545,6 +597,7 @@ function ClearDataSheet({ onClose }: { onClose: () => void }) {
     { key: 'budgets', label: 'Budgets', sub: `${counts.budgets} budgets` },
     { key: 'debts', label: 'Debts & loans', sub: `${counts.debts} entries` },
     { key: 'reminders', label: 'Payment reminders', sub: `${counts.reminders} reminders` },
+    { key: 'events', label: 'Events', sub: `${(data.events ?? []).length} events (records stay)` },
     { key: 'setup', label: 'Accounts & categories', sub: 'Back to the default Cash and Bank accounts and standard categories' },
   ];
   const any = Object.values(eff).some(Boolean);
@@ -564,7 +617,7 @@ function ClearDataSheet({ onClose }: { onClose: () => void }) {
               type="checkbox"
               style={{ width: 22, height: 22, accentColor: 'var(--exp)' }}
               checked={eff[it.key]}
-              disabled={forced && it.key !== 'setup' && it.key !== 'debts'}
+              disabled={forced && it.key !== 'setup' && it.key !== 'debts' && it.key !== 'events'}
               onChange={(e) => setPick((p) => ({ ...p, [it.key]: e.target.checked }))}
             />
           </label>
@@ -582,6 +635,10 @@ function ClearDataSheet({ onClose }: { onClose: () => void }) {
             if (eff.budgets) next.budgets = [];
             if (eff.debts) next.debts = [];
             if (eff.reminders) next.reminders = [];
+            if (eff.events) {
+              next.events = [];
+              next.txns = next.txns.map((t) => ({ ...t, eventId: undefined }));
+            }
             if (eff.setup)
               next = {
                 ...next,

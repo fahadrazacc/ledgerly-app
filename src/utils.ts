@@ -166,7 +166,8 @@ export function toCsv(data: AppData) {
   const cat = (id?: string) => data.categories.find((c) => c.id === id)?.name ?? '';
   const acc = (id?: string) => data.accounts.find((a) => a.id === id)?.name ?? '';
   const esc = (s: string) => (/[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s);
-  const rows = [['Date', 'Type', 'Amount', 'Category', 'Account', 'To account', 'Note']];
+  const ev = (id?: string) => (data.events ?? []).find((e) => e.id === id)?.name ?? '';
+  const rows = [['Date', 'Type', 'Amount', 'Category', 'Account', 'To account', 'Event', 'Note']];
   [...data.txns]
     .sort((a, b) => a.date.localeCompare(b.date))
     .forEach((t) =>
@@ -177,6 +178,7 @@ export function toCsv(data: AppData) {
         cat(t.categoryId),
         acc(t.accountId),
         acc(t.toAccountId),
+        ev(t.eventId),
         t.note ?? '',
       ]),
     );
@@ -208,5 +210,5 @@ export async function resizeImage(file: File, size = 256): Promise<string> {
 
 /** Fills in fields added in later versions so older saved data keeps working. */
 export function normalize(d: AppData): AppData {
-  return { ...d, reminders: d.reminders ?? [], budgets: d.budgets ?? [], debts: d.debts ?? [] };
+  return { ...d, reminders: d.reminders ?? [], budgets: d.budgets ?? [], debts: d.debts ?? [], events: d.events ?? [] };
 }

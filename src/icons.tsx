@@ -159,6 +159,13 @@ const paths = {
   ),
   store: <path d="M4 10v10h16V10M3 4h18l-1 6H4zM10 20v-5h4v5" />,
   trend: <path d="m3 17 6-6 4 4 8-8M15 7h6v6" />,
+  sparkle: (
+    <>
+      <path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z" />
+      <path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" />
+    </>
+  ),
+  send: <path d="M4 12 20 4l-6 16-3-7z" />,
   bell: (
     <>
       <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />

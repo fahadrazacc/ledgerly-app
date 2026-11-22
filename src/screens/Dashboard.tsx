@@ -2,6 +2,7 @@
 import { Icon } from '../icons';
 import { useStore } from '../store';
 import { SyncBanner } from './Cloud';
+import { InsightsPanel } from './Insights';
 import { href } from '../router';
 import { CatTile, Empty, Progress } from '../ui';
 import { CumulativeLine, Donut, HBars, PairBars } from '../charts';
@@ -138,6 +139,7 @@ export function Dashboard() {
       </div>
 
       <div className="dash">
+        <InsightsPanel />
         <section className="card w2 panel">
           <div className="panel-head">
             <div>

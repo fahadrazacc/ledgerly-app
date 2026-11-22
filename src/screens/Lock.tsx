@@ -7,7 +7,7 @@ import type { AppData } from '../types';
 import { createVault, getMeta, hasVault, importBackup, openVault, wipeVault, type Session } from '../vault';
 import { bioName, biometricEnabled, disableBiometric, unlockWithBiometric } from '../biometric';
 import { AuthSheet } from './Cloud';
-import { fetchAccountData, restoreFromAccount, signOut, useSync } from '../cloud/sync';
+import { fetchAccountData, initCloud, restoreFromAccount, signOut, syncState, useSync } from '../cloud/sync';
 import { friendly, type Remote } from '../cloud/backend';
 
 export function Lock({ onOpen }: { onOpen: (s: Session, d: AppData) => void }) {
@@ -33,6 +33,9 @@ function Unlock({ onOpen, onReset }: { onOpen: (s: Session, d: AppData) => void;
   const [shake, setShake] = useState(false);
   const [bio] = useState(biometricEnabled);
   const tried = useRef(false);
+  useEffect(() => {
+    initCloud().catch(() => undefined);
+  }, []);
 
   const tryOpen = useCallback(
     (p: string) => {
@@ -93,10 +96,15 @@ function Unlock({ onOpen, onReset }: { onOpen: (s: Session, d: AppData) => void;
     if (isPin && pass.length === len) tryOpen(pass);
   }, [pass, len, isPin, tryOpen]);
 
-  const erase = async () => {
-    if (await ask('Erase all data on this device and start again? This cannot be undone unless you have a backup file.', { ok: 'Erase' })) {
+  const logOut = async () => {
+    const signedIn = !!syncState().user;
+    const msg = signedIn
+      ? `Log out of ${syncState().user?.email ?? 'your account'} on this device? Your synced data stays in your account, and you can sign in again or use another account. You'll still need your Ledgerly ${isPin ? 'PIN' : 'password'} to open it.`
+      : `Log out on this device? You're not signed in to an account, so the data on this device will be removed. You can restore it later only from a backup file.`;
+    if (await ask(msg, { ok: 'Log out' })) {
       wipeVault();
       await disableBiometric();
+      if (signedIn) await signOut().catch(() => undefined);
       onReset();
     }
   };
@@ -152,8 +160,8 @@ function Unlock({ onOpen, onReset }: { onOpen: (s: Session, d: AppData) => void;
           Use {bioName()}
         </button>
       )}
-      <button className="link" onClick={erase}>
-        Forgot it? Erase and start again
+      <button className="link" onClick={logOut}>
+        Forgot your {isPin ? 'PIN' : 'password'} or need another account? Log out
       </button>
       <span className="muted small">Ledgerly {__APP_VERSION__}</span>
     </main>

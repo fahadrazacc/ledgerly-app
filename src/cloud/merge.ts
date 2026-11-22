@@ -3,7 +3,7 @@
 // who changed (or deleted) what since then, item by item.
 import type { AppData } from '../types';
 
-export const COLLECTIONS = ['accounts', 'categories', 'txns', 'budgets', 'debts', 'reminders'] as const;
+export const COLLECTIONS = ['accounts', 'categories', 'txns', 'budgets', 'debts', 'reminders', 'events'] as const;
 type Coll = (typeof COLLECTIONS)[number];
 type Item = { id: string };
 

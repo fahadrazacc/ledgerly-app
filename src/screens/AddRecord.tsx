@@ -6,17 +6,19 @@ import { useStore } from '../store';
 import { go, href } from '../router';
 import { AccountTile, CatTile, IconTile, Segmented, Sheet } from '../ui';
 import type { AppData, RecordType, Txn } from '../types';
-import { addDays, balanceOf, money, toDateInput, uid } from '../utils';
+import { balanceOf, money, toDateInput, uid } from '../utils';
 import { evaluate, hasOp, press as calcPress } from '../calc';
 import { budgetAlert, nextDue, notifyNow } from '../notify';
 import { toast } from '../toast';
 
+const inEvent = (e: { start: string; end?: string }, day: string) => day >= e.start && day <= (e.end ?? e.start);
+
 const COLORS: Record<RecordType, string> = { expense: 'var(--exp)', income: 'var(--inc)', transfer: 'var(--accent)' };
 const pad = (n: number) => String(n).padStart(2, '0');
 const timeOf = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-const KEYS = ['7', '8', '9', '÷', '4', '5', '6', '×', '1', '2', '3', '−', '.', '0', 'back', '+', 'C', '='];
+const KEYS = ['1', '2', '3', '÷', '4', '5', '6', '×', '7', '8', '9', '−', '.', '0', 'back', '+', 'C', '='];
 
-export function AddRecord({ id, reminderId, from, presetType }: { id: string | null; reminderId: string | null; from: string; presetType: RecordType | null }) {
+export function AddRecord({ id, reminderId, from, presetType, presetEvent }: { id: string | null; reminderId: string | null; from: string; presetType: RecordType | null; presetEvent?: string | null }) {
   const { data, update, cur } = useStore();
   const existing = id ? data.txns.find((t) => t.id === id) : undefined;
   const reminder = reminderId ? data.reminders?.find((r) => r.id === reminderId) : undefined;
@@ -40,7 +42,12 @@ export function AddRecord({ id, reminderId, from, presetType }: { id: string | n
   const [day, setDay] = useState(toDateInput(startDate));
   const [time, setTime] = useState(timeOf(startDate));
   const [note, setNote] = useState(existing?.note ?? reminder?.title ?? '');
-  const [sheet, setSheet] = useState<null | 'cat' | 'acc' | 'to' | 'newcat'>(null);
+  const [sheet, setSheet] = useState<null | 'cat' | 'acc' | 'to' | 'newcat' | 'event'>(null);
+  const events = (data.events ?? []).filter((e) => !e.archived || e.id === existing?.eventId);
+  const autoEvent = (d: string) => events.find((e) => e.autoAdd && !e.archived && inEvent(e, d))?.id;
+  const [eventId, setEventId] = useState<string | undefined>(existing ? existing.eventId : (presetEvent ?? autoEvent(toDateInput(startDate))));
+  const [eventTouched, setEventTouched] = useState(!!existing || !!presetEvent);
+  const ev = events.find((e) => e.id === eventId);
   const [error, setError] = useState('');
 
   const cats = data.categories.filter((c) => c.type === (type === 'income' ? 'income' : 'expense') && (!c.archived || c.id === categoryId));
@@ -84,8 +91,6 @@ export function AddRecord({ id, reminderId, from, presetType }: { id: string | n
     return Number(parts[0]).toLocaleString('en-US') + (parts.length > 1 ? '.' + parts[1] : '');
   })();
 
-  const todayStr = toDateInput(new Date());
-  const yesterdayStr = toDateInput(addDays(new Date(), -1));
 
   function save() {
     if (!(value > 0)) return setError(evaluate(expr) === null ? 'Check the calculation' : 'Enter an amount');
@@ -107,6 +112,7 @@ export function AddRecord({ id, reminderId, from, presetType }: { id: string | n
       date: when.toISOString(),
       note: note.trim() || undefined,
       createdAt: existing?.createdAt ?? Date.now(),
+      eventId: eventId || undefined,
     };
     const next0: AppData = { ...data, txns: existing ? data.txns.map((t) => (t.id === txn.id ? txn : t)) : [...data.txns, txn] };
     const alert = !existing && txn.type === 'expense' ? budgetAlert(data, next0, txn.categoryId) : null;
@@ -155,7 +161,7 @@ export function AddRecord({ id, reminderId, from, presetType }: { id: string | n
   );
 
   return (
-    <main className="screen no-nav narrow" style={{ gap: 12 }}>
+    <main className="screen no-nav narrow add-screen">
       <header className="head">
         <a className="btn-icon" href={href(from)} aria-label="Close">
           <Icon name="close" />
@@ -217,33 +223,38 @@ export function AddRecord({ id, reminderId, from, presetType }: { id: string | n
         )}
       </div>
 
-      <div className="card" style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <span className="pick-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Icon name="calendar" size={16} /> Date &amp; time
-          </span>
-          <div className="chips">
-            <button className={`chip ${day === todayStr ? 'on' : ''}`} onClick={() => setDay(todayStr)}>
-              Today
-            </button>
-            <button className={`chip ${day === yesterdayStr ? 'on' : ''}`} onClick={() => setDay(yesterdayStr)}>
-              Yesterday
-            </button>
-          </div>
-        </div>
-        <div className="dt">
-          <input type="date" aria-label="Date" value={day} onChange={(e) => e.target.value && setDay(e.target.value)} />
+      <div className="dt" aria-label="Date and time">
+        <label className="dt-field">
+          <Icon name="calendar" size={16} />
+          <input
+            type="date"
+            aria-label="Date"
+            value={day}
+            onChange={(e) => {
+              if (!e.target.value) return;
+              setDay(e.target.value);
+              if (!eventTouched) setEventId(autoEvent(e.target.value));
+            }}
+          />
+        </label>
+        <label className="dt-field">
+          <Icon name="clock" size={16} />
           <input type="time" aria-label="Time" value={time} onChange={(e) => e.target.value && setTime(e.target.value)} />
-        </div>
+        </label>
       </div>
 
-      <label className="pick-btn" style={{ minHeight: 52 }}>
-        <IconTile icon="note" color="#495057" size={34} />
-        <span className="row-main">
-          <span className="pick-label">Note</span>
-          <input type="text" placeholder="Add a note" value={note} onChange={(e) => setNote(e.target.value)} maxLength={80} style={{ color: 'var(--ink)' }} />
-        </span>
-      </label>
+      <div className="note-row">
+        <label className="pick-btn compact">
+          <Icon name="note" size={18} />
+          <input type="text" placeholder="Add a note" aria-label="Note" value={note} onChange={(e) => setNote(e.target.value)} maxLength={80} style={{ color: 'var(--ink)' }} />
+        </label>
+        <button className="pick-btn compact" onClick={() => setSheet('event')} aria-label="Event" style={ev ? { color: ev.color } : undefined}>
+          <Icon name={ev?.icon ?? 'plane'} size={18} />
+          <span className="pick-value" style={{ color: ev ? ev.color : 'var(--muted)', fontWeight: ev ? 700 : 600 }}>
+            {ev ? ev.name : 'Event'}
+          </span>
+        </button>
+      </div>
 
       {error && (
         <div className="error" role="alert" style={{ textAlign: 'center' }}>
@@ -266,10 +277,64 @@ export function AddRecord({ id, reminderId, from, presetType }: { id: string | n
         ))}
       </div>
 
-      <button className="btn block" style={{ background: color, color: '#fff', height: 56, fontSize: 16 }} onClick={save}>
-        <Icon name="check" size={20} stroke={2.2} />
-        {existing ? 'Save changes' : 'Save record'}
-      </button>
+      <div className="save-bar">
+        <button className="btn block" style={{ background: color, color: '#fff', height: 52, fontSize: 16 }} onClick={save}>
+          <Icon name="check" size={20} stroke={2.2} />
+          {existing ? 'Save changes' : 'Save record'}
+        </button>
+      </div>
+
+      {sheet === 'event' && (
+        <Sheet title="Add to an event" onClose={() => setSheet(null)}>
+          <div className="card list">
+            <button
+              className="row"
+              onClick={() => {
+                setEventId(undefined);
+                setEventTouched(true);
+                setSheet(null);
+              }}
+            >
+              <IconTile icon="close" color="#868E96" />
+              <span className="row-main">
+                <span className="row-title">No event</span>
+              </span>
+              {!eventId && (
+                <span style={{ color: 'var(--accent)' }}>
+                  <Icon name="check" />
+                </span>
+              )}
+            </button>
+            {events
+              .filter((e) => !e.archived)
+              .map((e) => (
+                <button
+                  key={e.id}
+                  className="row"
+                  onClick={() => {
+                    setEventId(e.id);
+                    setEventTouched(true);
+                    setSheet(null);
+                  }}
+                >
+                  <IconTile icon={e.icon} color={e.color} />
+                  <span className="row-main">
+                    <span className="row-title">{e.name}</span>
+                    <span className="row-sub">{e.end && e.end !== e.start ? `${e.start} → ${e.end}` : e.start}</span>
+                  </span>
+                  {eventId === e.id && (
+                    <span style={{ color: 'var(--accent)' }}>
+                      <Icon name="check" />
+                    </span>
+                  )}
+                </button>
+              ))}
+          </div>
+          <a className="btn secondary" href={href('events')}>
+            {events.length ? 'Manage events' : 'Create an event (trip, wedding…)'}
+          </a>
+        </Sheet>
+      )}
 
       {sheet === 'cat' && (
         <Sheet title="Choose category" onClose={() => setSheet(null)}>

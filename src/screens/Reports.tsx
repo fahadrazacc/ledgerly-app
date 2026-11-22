@@ -3,6 +3,7 @@ import { Icon } from '../icons';
 import { useStore } from '../store';
 import { CatTile, Empty, Progress, Segmented } from '../ui';
 import { CustomRange, periodLabel, periodRange, shiftAnchor, type Period } from './Records';
+import { AverageCard } from './Averages';
 import { addDays, addMonths, byCategory, money, monthShort, short, startOfMonth, sums } from '../utils';
 
 export function Reports() {
@@ -198,6 +199,7 @@ export function Reports() {
           ))}
         </div>
       </section>
+        <AverageCard />
       </div>
 
       {customOpen && (

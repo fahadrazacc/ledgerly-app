@@ -33,6 +33,20 @@ export interface Txn {
   date: string; // ISO timestamp
   note?: string;
   createdAt: number;
+  eventId?: string;
+}
+
+/** A trip, wedding or other occasion that groups records. */
+export interface LedgerEvent {
+  id: string;
+  name: string;
+  icon: IconName;
+  color: string;
+  start: string; // ISO date (yyyy-mm-dd)
+  end?: string; // ISO date, inclusive
+  budget?: number;
+  autoAdd: boolean; // pre-select for new records dated inside the event
+  archived?: boolean;
 }
 
 export interface Budget {
@@ -62,6 +76,13 @@ export interface Settings {
   theme?: 'system' | 'light' | 'dark';
   autoLockMin?: number; // minutes in the background before locking; 0 = immediately
   notify?: NotifySettings;
+  ai?: AiSettings;
+}
+
+export interface AiSettings {
+  geminiKey?: string; // kept inside the encrypted vault
+  includeNotes?: boolean;
+  lastSummary?: { text: string; at: number };
 }
 
 export interface NotifySettings {
@@ -97,4 +118,5 @@ export interface AppData {
   budgets: Budget[];
   debts: Debt[];
   reminders?: Reminder[];
+  events?: LedgerEvent[];
 }

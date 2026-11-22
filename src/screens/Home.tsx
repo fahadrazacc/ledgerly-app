@@ -1,6 +1,8 @@
 import { Icon } from '../icons';
 import { useStore } from '../store';
 import { SyncBanner } from './Cloud';
+import { EventsHomeCard } from './Events';
+import { InsightsHomeCard } from './Insights';
 import { href } from '../router';
 import { AccountTile, CatTile, Empty, IconTile, Progress } from '../ui';
 import { upcoming } from '../notify';
@@ -41,9 +43,6 @@ export function Home() {
           <a className="btn-icon" aria-label={`Payment reminders${dueCount ? `, ${dueCount} due` : ''}`} href={href('reminders')}>
             <Icon name="bell" />
             {dueCount > 0 && <span className="bell-dot">{dueCount}</span>}
-          </a>
-          <a className="btn-icon" aria-label="Profile and settings" href={href('profile')}>
-            <Icon name="settings" />
           </a>
         </div>
       </header>
@@ -123,6 +122,9 @@ export function Home() {
               </div>
             </section>
           )}
+
+          <InsightsHomeCard />
+          <EventsHomeCard />
 
           <section className="section">
             <div className="section-head">

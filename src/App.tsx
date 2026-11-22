@@ -10,6 +10,8 @@ import { ToastHost } from './toast';
 import { normalize } from './utils';
 import { Reminders } from './screens/Reminders';
 import { Dashboard } from './screens/Dashboard';
+import { EventDetail, Events } from './screens/Events';
+import { Insights } from './screens/Insights';
 import { Avatar } from './screens/Profile';
 import { useWide } from './charts';
 import { useStore } from './store';
@@ -55,6 +57,8 @@ const NAV: { path: Path; label: string; icon: IconName }[] = [
 ];
 // Extra items shown only in the wide (web) sidebar.
 const SIDE: { path: Path; label: string; icon: IconName }[] = [
+  { path: 'insights', label: 'AI insights', icon: 'sparkle' },
+  { path: 'events', label: 'Events', icon: 'plane' },
   { path: 'accounts', label: 'Accounts', icon: 'bank' },
   { path: 'reminders', label: 'Reminders', icon: 'bell' },
   { path: 'categories', label: 'Categories', icon: 'tag' },
@@ -74,7 +78,7 @@ function Shell() {
       screen = <Records key={params.get('account') ?? 'all'} account={params.get('account')} />;
       break;
     case 'add':
-      screen = <AddRecord key={(params.get('id') ?? '') + (params.get('reminder') ?? '')} id={params.get('id')} reminderId={params.get('reminder')} from={params.get('from') || 'home'} presetType={params.get('type') as RecordType | null} />;
+      screen = <AddRecord key={(params.get('id') ?? '') + (params.get('reminder') ?? '')} id={params.get('id')} reminderId={params.get('reminder')} from={params.get('from') || 'home'} presetType={params.get('type') as RecordType | null} presetEvent={params.get('event')} />;
       break;
     case 'reports':
       screen = <Reports />;
@@ -92,6 +96,15 @@ function Shell() {
     case 'reminders':
       screen = <Reminders />;
       break;
+    case 'events':
+      screen = <Events />;
+      break;
+    case 'event':
+      screen = <EventDetail key={params.get('id') ?? ''} id={params.get('id')} />;
+      break;
+    case 'insights':
+      screen = <Insights />;
+      break;
     case 'categories':
       screen = <Categories />;
       break;
@@ -99,7 +112,7 @@ function Shell() {
       screen = wide ? <Dashboard /> : <Home />;
   }
 
-  const active = wide ? (path === 'profile' ? 'settings' : path) : ['accounts', 'settings', 'profile', 'categories', 'reminders'].includes(path) ? 'home' : path;
+  const active = wide ? (path === 'profile' ? 'settings' : path === 'event' ? 'events' : path) : ['accounts', 'settings', 'profile', 'categories', 'reminders', 'events', 'event', 'insights'].includes(path) ? 'home' : path;
   const navItem = (n: (typeof NAV)[number]) => (
     <a key={n.path} className={`item ${active === n.path ? 'on' : ''}`} href={href(n.path)} aria-current={active === n.path ? 'page' : undefined}>
       <Icon name={n.icon} size={22} stroke={1.9} />
