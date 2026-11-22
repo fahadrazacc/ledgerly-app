@@ -41,6 +41,8 @@ export async function createFirebase(): Promise<Backend> {
 
   // Android: Google's own sign-in sheet (Credential Manager), then hand the token to Firebase.
   const nativeGoogle = async (scopes: string[] = []) => {
+    if (!Capacitor.isPluginAvailable('FirebaseAuthentication'))
+      throw new Error('Google sign-in on iPhone needs one more Firebase setting (the iOS app). Use email and password for now.');
     const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
     try {
       return await FirebaseAuthentication.signInWithGoogle(scopes.length ? { scopes } : undefined);

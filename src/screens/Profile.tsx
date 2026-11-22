@@ -8,7 +8,7 @@ import { BackLink, Header, IconTile, Segmented, Sheet } from '../ui';
 import { CURRENCIES, defaultCategories } from '../seed';
 import type { AppData, NotifySettings } from '../types';
 import { changePasscode, checkPasscode, exportBackup, getMeta, importBackup, setMeta, wipeVault } from '../vault';
-import { biometricAvailable, biometricEnabled, disableBiometric, enableBiometric, isNativeApp, refreshBiometric } from '../biometric';
+import { biometricAvailable, biometricEnabled, BioName, bioName, disableBiometric, enableBiometric, isIOS, isNativeApp, refreshBiometric } from '../biometric';
 import { autoBackupNow, canSaveToPhone, FOLDER, saveBackupToPhone } from '../backup';
 import { askNotificationPermission, canNotify, notificationPermission, notifyOf } from '../notify';
 import { download, initials, resizeImage, toCsv, uid } from '../utils';
@@ -279,11 +279,11 @@ export function Profile() {
           <div className="row">
             <IconTile icon="fingerprint" color="#087F5B" />
             <span className="row-main">
-              <span className="row-title">Unlock with fingerprint</span>
-              <span className="row-sub wrap">{!native ? 'Available in the Android app' : bioOk ? (bioOn ? 'On' : 'Off') : 'No fingerprint set up on this phone'}</span>
+              <span className="row-title">Unlock with {bioName()}</span>
+              <span className="row-sub wrap">{!native ? 'Available in the phone apps' : bioOk ? (bioOn ? 'On' : 'Off') : `No ${bioName()} set up on this phone`}</span>
             </span>
             <Switch
-              label="Unlock with fingerprint"
+              label={`Unlock with ${bioName()}`}
               checked={bioOn}
               disabled={!bioOk}
               onChange={async (v) => {
@@ -291,7 +291,7 @@ export function Profile() {
                 else {
                   await disableBiometric();
                   setBioOn(false);
-                  toast('Fingerprint unlock turned off');
+                  toast(`${BioName()} unlock turned off`);
                 }
               }}
             />
@@ -344,7 +344,7 @@ export function Profile() {
                 <IconTile icon="download" color="#087F5B" />
                 <span className="row-main">
                   <span className="row-title">Save backup to phone</span>
-                  <span className="row-sub wrap">To Documents/{FOLDER} · kept if you uninstall the app</span>
+                  <span className="row-sub wrap">{isIOS() ? `To the Files app (On My iPhone › Ledgerly). Removed if you delete the app, so also use Share or Google Drive` : `To Documents/${FOLDER} · kept if you uninstall the app`}</span>
                 </span>
                 <Icon name="chevR" />
               </button>
@@ -479,14 +479,14 @@ export function Profile() {
       )}
       {sheet === 'bio' && (
         <ConfirmPasscode
-          title="Turn on fingerprint"
-          note={`Enter your ${kindLabel} once. It's then kept in your phone's secure storage and only released after a fingerprint scan.`}
+          title={`Turn on ${bioName()}`}
+          note={`Enter your ${kindLabel} once. It's then kept in your phone's secure storage and only released after a ${isIOS() ? 'Face ID' : 'fingerprint'} scan.`}
           onClose={() => setSheet(null)}
           onOk={async (pass) => {
             await enableBiometric(pass);
             setBioOn(true);
             setSheet(null);
-            toast('Fingerprint unlock is on');
+            toast(`${BioName()} unlock is on`);
           }}
         />
       )}
@@ -624,7 +624,7 @@ function ConfirmPasscode(props: { title: string; note: string; onClose: () => vo
           try {
             await props.onOk(pass);
           } catch (err) {
-            setError(/cancel/i.test(String((err as Error).message)) ? 'Cancelled' : (err as Error).message || 'Could not turn on fingerprint');
+            setError(/cancel/i.test(String((err as Error).message)) ? 'Cancelled' : (err as Error).message || `Could not turn on ${bioName()}`);
             setBusy(false);
           }
         }}

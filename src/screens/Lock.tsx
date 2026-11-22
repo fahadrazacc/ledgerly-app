@@ -5,7 +5,7 @@ import { Keypad, Segmented } from '../ui';
 import { CURRENCIES, emptyData, sampleData } from '../seed';
 import type { AppData } from '../types';
 import { createVault, getMeta, hasVault, importBackup, openVault, wipeVault, type Session } from '../vault';
-import { biometricEnabled, disableBiometric, unlockWithBiometric } from '../biometric';
+import { bioName, biometricEnabled, disableBiometric, unlockWithBiometric } from '../biometric';
 import { AuthSheet } from './Cloud';
 import { fetchAccountData, restoreFromAccount, signOut, useSync } from '../cloud/sync';
 import { friendly, type Remote } from '../cloud/backend';
@@ -59,8 +59,8 @@ function Unlock({ onOpen, onReset }: { onOpen: (s: Session, d: AppData) => void;
       const msg = String((e as Error)?.message ?? e);
       if (/no protected credentials|invalidated|21/i.test(msg)) {
         await disableBiometric();
-        setError('Fingerprints changed on this phone. Unlock with your ' + (isPin ? 'PIN' : 'password') + ', then turn fingerprint on again in Profile.');
-      } else if (!/cancel/i.test(msg)) setError('Fingerprint not recognised. Use your ' + (isPin ? 'PIN' : 'password') + '.');
+        setError(`${bioName()} changed on this phone. Unlock with your ${isPin ? 'PIN' : 'password'}, then turn ${bioName()} on again in Profile.`);
+      } else if (!/cancel/i.test(msg)) setError(`${bioName()} not recognised. Use your ${isPin ? 'PIN' : 'password'}.`);
     }
   }, [tryOpen, isPin]);
 
@@ -149,7 +149,7 @@ function Unlock({ onOpen, onReset }: { onOpen: (s: Session, d: AppData) => void;
       {bio && (
         <button className="btn secondary" onClick={fingerprint} disabled={busy}>
           <Icon name="fingerprint" size={22} />
-          Use fingerprint
+          Use {bioName()}
         </button>
       )}
       <button className="link" onClick={erase}>

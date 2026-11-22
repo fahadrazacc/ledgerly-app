@@ -5,6 +5,12 @@ const config: CapacitorConfig = {
   appName: 'Ledgerly',
   webDir: 'dist',
   android: { backgroundColor: '#F4F5F9' },
+  ios: {
+    backgroundColor: '#F4F5F9',
+    contentInset: 'never',
+    // Firebase sign-in plugin is added on iPhone once GoogleService-Info.plist is in place
+    includePlugins: ['@capacitor/filesystem', '@capacitor/local-notifications', '@capacitor/share', '@capgo/capacitor-native-biometric'],
+  },
   plugins: {
     SystemBars: { insetsHandling: 'css', initialViewportFitValueHint: 'cover' },
     LocalNotifications: { smallIcon: 'ic_stat_ledgerly', iconColor: '#3B5BDB' },

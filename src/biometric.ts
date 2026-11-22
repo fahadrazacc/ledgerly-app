@@ -8,6 +8,10 @@ const SERVER = 'com.ledgerly.app.vault';
 const plugin = () => import('@capgo/capacitor-native-biometric');
 
 export const isNativeApp = () => Capacitor.isNativePlatform();
+export const isIOS = () => Capacitor.getPlatform() === 'ios';
+/** "Face ID" on iPhone, "fingerprint" on Android. */
+export const bioName = () => (isIOS() ? 'Face ID' : 'fingerprint');
+export const BioName = () => (isIOS() ? 'Face ID' : 'Fingerprint');
 
 export async function biometricAvailable(): Promise<boolean> {
   if (!isNativeApp()) return false;
@@ -24,7 +28,7 @@ export const biometricEnabled = () => isNativeApp() && getMeta().biometric;
 
 export async function enableBiometric(passcode: string) {
   const { NativeBiometric, AccessControl } = await plugin();
-  await NativeBiometric.verifyIdentity({ title: 'Turn on fingerprint unlock', reason: 'Confirm it is you', negativeButtonText: 'Cancel' });
+  await NativeBiometric.verifyIdentity({ title: `Turn on ${bioName()} unlock`, reason: 'Confirm it is you', negativeButtonText: 'Cancel' });
   await NativeBiometric.setCredentials({ username: 'ledgerly', password: passcode, server: SERVER, accessControl: AccessControl.BIOMETRY_CURRENT_SET });
   setMeta({ biometric: true });
 }
