@@ -4,7 +4,7 @@ import { useStore } from '../store';
 import { href } from '../router';
 import { Empty, Segmented, Sheet } from '../ui';
 import { RecordRow } from './RecordRow';
-import { addDays, addMonths, dayKey, dayLabel, inRange, money, monthLabel, startOfDay, startOfMonth, startOfWeek, toDateInput } from '../utils';
+import { addDays, addMonths, dayKey, dayLabel, inRange, money, monthLabel, startOfDay, startOfMonth, startOfWeek, toDateInput, byNewest } from '../utils';
 import type { Txn } from '../types';
 
 type Filter = 'all' | 'expense' | 'income' | 'transfer';
@@ -81,7 +81,7 @@ export function Records({ account: initialAccount }: { account: string | null })
         const acc = data.accounts.find((a) => a.id === t.accountId)?.name ?? '';
         return [t.note ?? '', cat, acc, String(t.amount)].some((s) => s.toLowerCase().includes(q));
       })
-      .sort((a, b) => b.date.localeCompare(a.date));
+      .sort(byNewest);
   }, [data, start, end, filter, query, accountId]);
 
   // Income/expense for the list; transfers count only when looking at one account.
@@ -201,6 +201,25 @@ export function Records({ account: initialAccount }: { account: string | null })
           <span className="value">{money(income - expense, cur, true)}</span>
         </div>
       </div>
+
+      {list.length > 0 && (
+        <p className="list-count" aria-live="polite">
+          <strong>{list.length.toLocaleString()}</strong> {list.length === 1 ? 'transaction' : 'transactions'}
+          {filter === 'all' && (
+            <span className="muted">
+              {[
+                ['expense', 'expense', 'expenses'],
+                ['income', 'income', 'income'],
+                ['transfer', 'transfer', 'transfers'],
+              ]
+                .map(([k, one, many]) => [list.filter((t) => t.type === k).length, one, many] as const)
+                .filter(([n]) => n > 0)
+                .map(([n, one, many]) => ` · ${n} ${n === 1 ? one : many}`)
+                .join('')}
+            </span>
+          )}
+        </p>
+      )}
 
       {groups.length === 0 && (
         <div className="card">

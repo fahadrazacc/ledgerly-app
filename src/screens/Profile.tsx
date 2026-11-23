@@ -13,7 +13,6 @@ import { autoBackupNow, canSaveToPhone, FOLDER, saveBackupToPhone } from '../bac
 import { askNotificationPermission, canNotify, notificationPermission, notifyOf } from '../notify';
 import { download, initials, resizeImage, toCsv, uid } from '../utils';
 import { CloudSection, DriveRows } from './Cloud';
-import { KeySetup } from './Insights';
 import { afterPasscodeChange, beforePasscodeChange } from '../cloud/sync';
 
 export const APP_VERSION = __APP_VERSION__;
@@ -270,49 +269,6 @@ export function Profile() {
             </span>
             <Switch label="Debt due date notifications" checked={n.debts} onChange={(v) => setNotify({ debts: v })} />
           </div>
-        </div>
-      </section>
-
-      {/* ---------- AI ---------- */}
-      <section className="section">
-        <h2 className="h2">AI assistant</h2>
-        <div className="card list">
-          {s.ai?.geminiKey ? (
-            <>
-              <a className="row" href={href('insights')}>
-                <IconTile icon="sparkle" color="#7048E8" />
-                <span className="row-main">
-                  <span className="row-title">AI insights</span>
-                  <span className="row-sub wrap">Gemini is connected · key ending …{s.ai.geminiKey.slice(-4)}</span>
-                </span>
-                <Icon name="chevR" />
-              </a>
-              <div className="row">
-                <IconTile icon="note" color="#495057" />
-                <span className="row-main">
-                  <span className="row-title">Share record notes with AI</span>
-                  <span className="row-sub wrap">Off: only totals by category and month are sent</span>
-                </span>
-                <Switch label="Share record notes with AI" checked={!!s.ai.includeNotes} onChange={(v) => setSettings({ ai: { ...s.ai, includeNotes: v } })} />
-              </div>
-              <button
-                className="row"
-                onClick={async () => {
-                  if (await ask('Remove the Gemini key from Ledgerly? AI summaries stop until you add a key again.', { ok: 'Remove' })) setSettings({ ai: { includeNotes: s.ai?.includeNotes } });
-                }}
-              >
-                <IconTile icon="trash" color="#C2410C" />
-                <span className="row-main">
-                  <span className="row-title exp">Remove AI key</span>
-                </span>
-                <Icon name="chevR" />
-              </button>
-            </>
-          ) : (
-            <div className="row" style={{ display: 'block' }}>
-              <KeySetup />
-            </div>
-          )}
         </div>
       </section>
 

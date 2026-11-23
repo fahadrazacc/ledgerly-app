@@ -8,7 +8,7 @@ import { upcoming } from '../notify';
 import { dueLabel } from './Reminders';
 import { RecordRow } from './RecordRow';
 import { Avatar } from './Profile';
-import { addMonths, balanceOf, money, monthShort, spentInCategory, startOfMonth, sums, totalBalance } from '../utils';
+import { addMonths, balanceOf, money, monthShort, spentInCategory, startOfMonth, sums, totalBalance, byNewest } from '../utils';
 
 export function Home() {
   const { data, cur, hidden, toggleHidden } = useStore();
@@ -21,7 +21,7 @@ export function Home() {
   const overall = data.budgets.find((b) => b.categoryId === null);
   const spent = spentInCategory(data, null, start, end);
   const daysLeft = Math.ceil((end.getTime() - now.getTime()) / 86_400_000);
-  const recent = [...data.txns].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
+  const recent = [...data.txns].sort(byNewest).slice(0, 5);
   const accounts = data.accounts.filter((a) => !a.archived);
   const soon = upcoming(data, 7);
   const dueCount = soon.filter((r) => new Date(r.due).getTime() < Date.now() + 86_400_000).length;
@@ -39,8 +39,8 @@ export function Home() {
           </div>
         </a>
         <div className="head-actions">
-          <a className="btn-icon" aria-label="AI insights" title="AI insights" href={href('insights')}>
-            <Icon name="sparkle" />
+          <a className="btn-icon" aria-label="Analysis" title="Analysis" href={href('analysis')}>
+            <Icon name="trend" />
           </a>
           <a className="btn-icon" aria-label={`Payment reminders${dueCount ? `, ${dueCount} due` : ''}`} href={href('reminders')}>
             <Icon name="bell" />

@@ -38,7 +38,7 @@ export function AddRecord({ id, reminderId, from, presetType, presetEvent }: { i
     (accounts.some((a) => a.id === lastUsedAccount) ? lastUsedAccount : undefined) ??
     accounts[0]?.id ??
     '';
-  const startDate = existing ? new Date(existing.date) : new Date();
+  const [startDate] = useState(() => (existing ? new Date(existing.date) : new Date()));
 
   const [type, setType] = useState<RecordType>(existing?.type ?? reminder?.type ?? presetType ?? 'expense');
   const [expr, setExpr] = useState(existing ? String(existing.amount) : reminder?.amount ? String(reminder.amount) : '0');
@@ -103,6 +103,13 @@ export function AddRecord({ id, reminderId, from, presetType, presetEvent }: { i
     if (type === 'transfer' && (!toAccountId || toAccountId === accountId)) return setError('Pick two different accounts');
     const when = new Date(`${day}T${time || '12:00'}`);
     if (isNaN(when.getTime())) return setError('Check the date and time');
+    // Keep seconds so records added in the same minute stay in order.
+    const untouched = time === timeOf(startDate) && day === toDateInput(startDate);
+    if (untouched) when.setTime(existing ? startDate.getTime() : Date.now());
+    else {
+      const now = new Date();
+      when.setSeconds(now.getSeconds(), now.getMilliseconds());
+    }
     const txn: Txn = {
       id: existing?.id ?? uid(),
       type,

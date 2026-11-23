@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ask } from '../confirm';
 import { Icon } from '../icons';
 import { Keypad, Segmented } from '../ui';
-import { CURRENCIES, emptyData, sampleData } from '../seed';
+import { CURRENCIES, emptyData, guessCurrency, sampleData } from '../seed';
 import type { AppData } from '../types';
 import { createVault, getMeta, hasVault, importBackup, openVault, wipeVault, type Session } from '../vault';
 import { bioName, biometricEnabled, disableBiometric, unlockWithBiometric } from '../biometric';
@@ -216,7 +216,7 @@ function Unlock({ onOpen, onReset }: { onOpen: (s: Session, d: AppData) => void;
 
 function Setup({ onOpen, onRestored, startSignIn = false }: { onOpen: (s: Session, d: AppData) => void; onRestored: () => void; startSignIn?: boolean }) {
   const [name, setName] = useState('');
-  const [currency, setCurrency] = useState('Rs');
+  const [currency, setCurrency] = useState(guessCurrency);
   const [kind, setKind] = useState<'pin' | 'password'>('pin');
   const [pin, setPin] = useState('');
   const [pin2, setPin2] = useState('');

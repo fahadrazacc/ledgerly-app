@@ -6,7 +6,7 @@ import { href } from '../router';
 import { toast } from '../toast';
 import { BackLink, CatTile, Empty, Header, IconTile, Progress, Sheet } from '../ui';
 import type { AppData, LedgerEvent } from '../types';
-import { money, toDateInput, uid } from '../utils';
+import { money, toDateInput, uid, byNewest } from '../utils';
 import { CATEGORY_COLORS } from './Categories';
 import { RecordRow } from './RecordRow';
 
@@ -123,7 +123,7 @@ export function EventDetail({ id }: { id: string | null }) {
   const byCat = new Map<string, number>();
   txns.filter((t) => t.type === 'expense').forEach((t) => byCat.set(t.categoryId ?? '', (byCat.get(t.categoryId ?? '') ?? 0) + t.amount));
   const cats = [...byCat.entries()].sort((a, b) => b[1] - a[1]);
-  const sorted = [...txns].sort((a, b) => b.date.localeCompare(a.date));
+  const sorted = [...txns].sort(byNewest);
   return (
     <main className="screen narrow">
       <Header

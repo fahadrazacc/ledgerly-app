@@ -7,6 +7,7 @@ export const uid = () =>
     : Math.random().toString(36).slice(2) + Date.now().toString(36);
 
 const nf = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+const nf2 = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 // "Hide amounts" privacy mode: every amount shown through money() becomes dots.
 let masked = false;
@@ -16,7 +17,9 @@ export const setMasked = (m: boolean) => {
 
 export function money(n: number, cur: string, sign = false) {
   if (masked) return `${cur} ••••`;
-  const s = nf.format(Math.abs(n));
+  const v = Math.abs(n);
+  // Whole amounts stay short; cents always show two digits (12.5 → 12.50).
+  const s = Number.isInteger(Math.round(v * 100) / 100) ? nf.format(v) : nf2.format(v);
   const prefix = n < 0 ? '−' : sign && n > 0 ? '+' : '';
   return `${prefix}${cur} ${s}`;
 }
@@ -40,6 +43,10 @@ export const startOfWeek = (d: Date) => {
 
 export const monthLabel = (d: Date) => d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
 export const monthShort = (d: Date) => d.toLocaleDateString('en-GB', { month: 'short' });
+
+/** Newest first: by date and time (to the millisecond), then by when it was added. */
+export const byNewest = (a: { date: string; createdAt: number }, b: { date: string; createdAt: number }) =>
+  b.date.localeCompare(a.date) || (b.createdAt ?? 0) - (a.createdAt ?? 0);
 
 export function inRange(iso: string, start: Date, end: Date) {
   const t = new Date(iso).getTime();

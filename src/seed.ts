@@ -3,6 +3,27 @@ import { addDays, startOfMonth, uid } from './utils';
 
 export const CURRENCIES = ['Rs', '$', '€', '£', 'AED', 'SAR', '₹'];
 
+const EURO = new Set(['AT', 'BE', 'CY', 'DE', 'EE', 'ES', 'FI', 'FR', 'GR', 'HR', 'IE', 'IT', 'LT', 'LU', 'LV', 'MT', 'NL', 'PT', 'SI', 'SK']);
+/** A sensible starting currency from the device's region; the person can change it. */
+export function guessCurrency(): string {
+  let region = '';
+  try {
+    region = (new Intl.Locale(navigator.language).maximize().region ?? '').toUpperCase();
+  } catch {
+    /* older browsers */
+  }
+  if (region === 'PK') return 'Rs';
+  if (region === 'IN') return '₹';
+  if (region === 'AE') return 'AED';
+  if (region === 'SA') return 'SAR';
+  if (region === 'GB') return '£';
+  if (EURO.has(region)) return '€';
+  return '$';
+}
+
+/** Sample amounts are written in rupees; scale them to look natural in other currencies. */
+const SCALE: Record<string, number> = { Rs: 1, '₹': 0.35, AED: 0.1, SAR: 0.1, $: 0.025, '€': 0.025, '£': 0.02 };
+
 export function defaultCategories(): Category[] {
   const e = (name: string, icon: Category['icon'], color: string): Category => ({ id: uid(), name, type: 'expense', icon, color });
   const i = (name: string, icon: Category['icon'], color: string): Category => ({ id: uid(), name, type: 'income', icon, color });
@@ -44,16 +65,21 @@ export function emptyData(name: string, currency: string): AppData {
 export function sampleData(name: string, currency: string): AppData {
   const categories = defaultCategories();
   const c = (n: string) => categories.find((x) => x.name === n)!.id;
+  const k = SCALE[currency] ?? 1;
+  const round = (n: number) => {
+    if (k >= 1) return Math.round(n / 10) * 10;
+    const v = n * k;
+    return v >= 100 ? Math.round(v) : Math.round(v * 2) / 2;
+  };
   const accounts: Account[] = [
-    { id: uid(), name: 'Cash', kind: 'cash', initial: 15000 },
-    { id: uid(), name: 'Bank account', kind: 'bank', initial: 120000 },
-    { id: uid(), name: 'Mobile wallet', kind: 'wallet', initial: 20000 },
+    { id: uid(), name: 'Cash', kind: 'cash', initial: round(15000) },
+    { id: uid(), name: 'Bank account', kind: 'bank', initial: round(120000) },
+    { id: uid(), name: 'Mobile wallet', kind: 'wallet', initial: round(20000) },
   ];
   const [cash, bank, wallet] = accounts.map((a) => a.id);
 
   let seed = 7;
   const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  const round = (n: number) => Math.round(n / 10) * 10;
 
   const txns: Txn[] = [];
   const add = (date: Date, type: Txn['type'], amount: number, accountId: string, categoryId?: string, note?: string, toAccountId?: string) => {
@@ -84,17 +110,17 @@ export function sampleData(name: string, currency: string): AppData {
   }
 
   const budgets: Budget[] = [
-    { id: uid(), categoryId: null, limit: 150000 },
-    { id: uid(), categoryId: c('Food & Dining'), limit: 15000 },
-    { id: uid(), categoryId: c('Shopping'), limit: 15000 },
-    { id: uid(), categoryId: c('Transport'), limit: 9000 },
-    { id: uid(), categoryId: c('Bills & Utilities'), limit: 14000 },
-    { id: uid(), categoryId: c('Entertainment'), limit: 4000 },
+    { id: uid(), categoryId: null, limit: round(150000) },
+    { id: uid(), categoryId: c('Food & Dining'), limit: round(15000) },
+    { id: uid(), categoryId: c('Shopping'), limit: round(15000) },
+    { id: uid(), categoryId: c('Transport'), limit: round(9000) },
+    { id: uid(), categoryId: c('Bills & Utilities'), limit: round(14000) },
+    { id: uid(), categoryId: c('Entertainment'), limit: round(4000) },
   ];
 
   const debts: Debt[] = [
-    { id: uid(), person: 'Ali', kind: 'lent', amount: 15000, date: addDays(now, -10).toISOString(), due: addDays(now, 10).toISOString(), settled: false },
-    { id: uid(), person: 'Usman', kind: 'borrowed', amount: 5000, date: addDays(now, -4).toISOString(), due: addDays(now, 15).toISOString(), settled: false },
+    { id: uid(), person: 'Alex', kind: 'lent', amount: round(15000), date: addDays(now, -10).toISOString(), due: addDays(now, 10).toISOString(), settled: false },
+    { id: uid(), person: 'Sam', kind: 'borrowed', amount: round(5000), date: addDays(now, -4).toISOString(), due: addDays(now, 15).toISOString(), settled: false },
   ];
 
   return { version: 1, settings: { name, currency }, accounts, categories, txns, budgets, debts };

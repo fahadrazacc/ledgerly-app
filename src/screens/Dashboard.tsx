@@ -8,7 +8,7 @@ import { CumulativeLine, Donut, HBars, PairBars } from '../charts';
 import { RecordRow } from './RecordRow';
 import { dueLabel } from './Reminders';
 import { upcoming } from '../notify';
-import { addMonths, balanceOf, byCategory, money, monthLabel, monthShort, spentInCategory, startOfMonth, sums, totalBalance } from '../utils';
+import { addMonths, balanceOf, byCategory, money, monthLabel, monthShort, spentInCategory, startOfMonth, sums, totalBalance, byNewest } from '../utils';
 import type { AppData } from '../types';
 
 function dailyCumulative(data: AppData, start: Date) {
@@ -73,7 +73,7 @@ export function Dashboard() {
     .slice(0, 4);
   const oSpent = spentInCategory(data, null, start, end);
 
-  const recent = [...data.txns].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8);
+  const recent = [...data.txns].sort(byNewest).slice(0, 8);
   const soon = upcoming(data, 14).slice(0, 4);
   const hour = now.getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
@@ -90,8 +90,8 @@ export function Dashboard() {
           </h1>
         </div>
         <div className="head-actions">
-          <a className="btn-icon" aria-label="AI insights" title="AI insights" href={href('insights')}>
-            <Icon name="sparkle" />
+          <a className="btn-icon" aria-label="Analysis" title="Analysis" href={href('analysis')}>
+            <Icon name="trend" />
           </a>
           <button className="btn secondary small" onClick={toggleHidden} aria-pressed={hidden}>
             <Icon name={hidden ? 'eyeOff' : 'eye'} size={18} />
