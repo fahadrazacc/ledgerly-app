@@ -6,7 +6,7 @@ import { href } from '../router';
 import { BackLink, Header, IconTile } from '../ui';
 import { computeInsights, type Insight } from '../insights';
 import { PairBars, useWide } from '../charts';
-import { addDays, addMonths, byCategory, inRange, monthLabel, monthShort, money, spentInCategory, startOfMonth, sums } from '../utils';
+import { addDays, addMonths, byCategory, inRange, monthLabel, monthShort, money, spentInCategory, startOfMonth, sums, budgetsFor } from '../utils';
 import type { AppData } from '../types';
 
 type Tone = 'good' | 'warn' | 'bad' | 'info';
@@ -94,8 +94,8 @@ function analyse(data: AppData, start: Date) {
   const prevSame = complete ? start : addDays(prevStart, dayNo);
   const prev = sums(data.txns, prevStart, prevSame);
 
-  const overall = data.budgets.find((b) => b.categoryId === null);
-  const catBudgets = data.budgets
+  const overall = budgetsFor(data, start).find((b) => b.categoryId === null);
+  const catBudgets = budgetsFor(data, start)
     .filter((b) => b.categoryId)
     .map((b) => {
       const cat = data.categories.find((c) => c.id === b.categoryId);
@@ -298,7 +298,7 @@ export function Analysis() {
                 const share = a.month.expense ? (c.amount / a.month.expense) * 100 : 0;
                 const ch = c.usual > 0 ? Math.round((c.amount / c.usual - 1) * 100) : null;
                 return (
-                  <div key={c.category.id} className="cat-row">
+                  <a key={c.category.id} className="cat-row" href={href(`category?id=${c.category.id}&back=analysis`)}>
                     <IconTile icon={c.category.icon as IconName} color={c.category.color} size={32} />
                     <span className="row-main">
                       <span className="cat-line">
@@ -313,7 +313,7 @@ export function Analysis() {
                         {ch === null ? ' · new this month' : Math.abs(ch) < 10 ? ' · about usual' : ` · ${Math.abs(ch)}% ${ch > 0 ? 'more' : 'less'} than usual`}
                       </span>
                     </span>
-                  </div>
+                  </a>
                 );
               })}
             </div>

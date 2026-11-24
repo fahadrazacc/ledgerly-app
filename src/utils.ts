@@ -1,5 +1,5 @@
 import { Capacitor } from '@capacitor/core';
-import type { AppData, Category, Txn } from './types';
+import type { AppData, Category, Txn, Budget } from './types';
 
 export const uid = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -47,6 +47,15 @@ export const monthShort = (d: Date) => d.toLocaleDateString('en-GB', { month: 's
 /** Newest first: by date and time (to the millisecond), then by when it was added. */
 export const byNewest = (a: { date: string; createdAt: number }, b: { date: string; createdAt: number }) =>
   b.date.localeCompare(a.date) || (b.createdAt ?? 0) - (a.createdAt ?? 0);
+
+export const monthKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+/** Budgets that apply in the month starting at `start`. A one-month budget replaces the repeating one for the same category. */
+export function budgetsFor(data: AppData, start: Date): Budget[] {
+  const key = monthKey(start);
+  const active = data.budgets.filter((b) => !b.month || b.month === key);
+  return active.filter((b) => b.month || !active.some((o) => o.month && o.categoryId === b.categoryId));
+}
 
 export function inRange(iso: string, start: Date, end: Date) {
   const t = new Date(iso).getTime();

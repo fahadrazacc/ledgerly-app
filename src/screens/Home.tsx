@@ -8,7 +8,7 @@ import { upcoming } from '../notify';
 import { dueLabel } from './Reminders';
 import { RecordRow } from './RecordRow';
 import { Avatar } from './Profile';
-import { addMonths, balanceOf, money, monthShort, spentInCategory, startOfMonth, sums, totalBalance, byNewest } from '../utils';
+import { addMonths, balanceOf, money, monthShort, spentInCategory, startOfMonth, sums, totalBalance, byNewest, budgetsFor } from '../utils';
 
 export function Home() {
   const { data, cur, hidden, toggleHidden } = useStore();
@@ -18,7 +18,7 @@ export function Home() {
   const { income, expense } = sums(data.txns, start, end);
   const hour = now.getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  const overall = data.budgets.find((b) => b.categoryId === null);
+  const overall = budgetsFor(data, start).find((b) => b.categoryId === null);
   const spent = spentInCategory(data, null, start, end);
   const daysLeft = Math.ceil((end.getTime() - now.getTime()) / 86_400_000);
   const recent = [...data.txns].sort(byNewest).slice(0, 5);

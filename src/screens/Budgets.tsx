@@ -4,7 +4,7 @@ import { Icon } from '../icons';
 import { useStore } from '../store';
 import { CatTile, Empty, Progress, Sheet } from '../ui';
 import type { Budget } from '../types';
-import { addMonths, money, monthLabel, spentInCategory, startOfMonth, uid } from '../utils';
+import { addMonths, budgetsFor, money, monthKey, monthLabel, spentInCategory, startOfMonth, uid } from '../utils';
 
 export function Budgets() {
   const { data, cur, update } = useStore();
@@ -15,8 +15,8 @@ export function Budgets() {
   const end = addMonths(start, 1);
   const daysLeft = Math.max(1, Math.ceil((end.getTime() - now.getTime()) / 86_400_000));
 
-  const overall = data.budgets.find((b) => b.categoryId === null);
-  const catBudgets = data.budgets
+  const overall = budgetsFor(data, start).find((b) => b.categoryId === null);
+  const catBudgets = budgetsFor(data, start)
     .filter((b) => b.categoryId !== null)
     .map((b) => ({ b, cat: data.categories.find((c) => c.id === b.categoryId), spent: spentInCategory(data, b.categoryId, start, end) }))
     .filter((x) => x.cat)
@@ -53,6 +53,7 @@ export function Budgets() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
             <span className="muted" style={{ fontSize: 13, fontWeight: 600 }}>
               {monthLabel(start)}
+              {overall.month ? ' only' : ''}
             </span>
             {oLeft >= 0 ? (
               <span style={{ fontSize: 22, fontWeight: 800 }}>
@@ -112,6 +113,7 @@ export function Budgets() {
                       </span>
                       <span className={`row-sub ${over ? 'exp' : ''}`} style={over ? { fontWeight: 600 } : undefined}>
                         {over ? `Over by ${money(-left, cur)}` : `${money(left, cur)} left`}
+                        {b.month ? ' · this month only' : ''}
                       </span>
                     </span>
                     <span className="muted" style={{ fontSize: 13, whiteSpace: 'nowrap' }}>
@@ -147,12 +149,16 @@ export function Budgets() {
 function BudgetSheet(props: { budget: Budget | null; onClose: () => void; onSave: (b: Budget) => void; onDelete: (id: string) => void }) {
   const { data, cur } = useStore();
   const existing = props.budget && props.budget.id ? props.budget : null;
-  const used = new Set(data.budgets.filter((b) => b.id !== existing?.id).map((b) => b.categoryId ?? 'overall'));
+  const thisMonth = monthKey(new Date());
+  const [once, setOnce] = useState(!!props.budget?.month);
+  // A category can have one repeating budget and one for this month only.
+  const used = new Set(data.budgets.filter((b) => b.id !== existing?.id && (once ? b.month === thisMonth : !b.month)).map((b) => b.categoryId ?? 'overall'));
   const options = [
     ...(used.has('overall') ? [] : [{ value: 'overall', label: 'Whole month (all spending)' }]),
     ...data.categories.filter((c) => c.type === 'expense' && !c.archived && !used.has(c.id)).map((c) => ({ value: c.id, label: c.name })),
   ];
-  const [scope, setScope] = useState(props.budget ? props.budget.categoryId ?? 'overall' : options[0]?.value ?? '');
+  const [picked, setScope] = useState(props.budget ? props.budget.categoryId ?? 'overall' : options[0]?.value ?? '');
+  const scope = existing || options.some((o) => o.value === picked) ? picked : options[0]?.value ?? '';
   const [limit, setLimit] = useState(props.budget?.limit ? String(props.budget.limit) : '');
   const [error, setError] = useState('');
 
@@ -160,8 +166,12 @@ function BudgetSheet(props: { budget: Budget | null; onClose: () => void; onSave
     e.preventDefault();
     const n = Number(limit);
     if (!(n > 0)) return setError('Enter a limit above zero');
-    if (!scope) return setError('Every category already has a budget');
-    props.onSave({ id: existing?.id ?? uid(), categoryId: scope === 'overall' ? null : scope, limit: n });
+    if (!scope) return setError(once ? 'Every category already has a budget for this month' : 'Every category already has a budget');
+    if (existing && data.budgets.some((b) => b.id !== existing.id && b.categoryId === existing.categoryId && (once ? b.month === thisMonth : !b.month)))
+      return setError(once ? 'This category already has a budget for this month' : 'This category already has a repeating budget');
+    const b: Budget = { id: existing?.id ?? uid(), categoryId: scope === 'overall' ? null : scope, limit: n };
+    if (once) b.month = existing?.month ?? thisMonth;
+    props.onSave(b);
   };
 
   return (
@@ -175,8 +185,15 @@ function BudgetSheet(props: { budget: Budget | null; onClose: () => void; onSave
           </select>
         </label>
         <label className="field">
-          <span>Monthly limit ({cur})</span>
+          <span>{once ? 'Limit' : 'Monthly limit'} ({cur})</span>
           <input className="input" inputMode="decimal" value={limit} onChange={(e) => setLimit(e.target.value.replace(/[^\d.]/g, ''))} placeholder="e.g. 25000" autoFocus />
+        </label>
+        <label className="check-row">
+          <input type="checkbox" checked={once} onChange={(e) => setOnce(e.target.checked)} />
+          <span>
+            <strong>Only for {monthLabel(existing?.month ? new Date(existing.month + '-01T00:00') : new Date())}</strong>
+            <span className="muted">{once ? "It won't repeat next month." : 'Leave unticked to repeat this budget every month.'}</span>
+          </span>
         </label>
         {error && <div className="error" role="alert">{error}</div>}
         <button className="btn primary block">Save budget</button>

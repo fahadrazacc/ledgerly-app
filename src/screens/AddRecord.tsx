@@ -24,7 +24,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
 const timeOf = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 const KEYS = ['1', '2', '3', '÷', '4', '5', '6', '×', '7', '8', '9', '−', '.', '0', 'back', '+', 'C', '='];
 
-export function AddRecord({ id, reminderId, from, presetType, presetEvent, presetAccount }: { id: string | null; reminderId: string | null; from: string; presetType: RecordType | null; presetEvent?: string | null; presetAccount?: string | null }) {
+export function AddRecord({ id, reminderId, from, presetType, presetEvent, presetAccount, presetCategory }: { id: string | null; reminderId: string | null; from: string; presetType: RecordType | null; presetEvent?: string | null; presetAccount?: string | null; presetCategory?: string | null }) {
   const { data, update, cur } = useStore();
   const existing = id ? data.txns.find((t) => t.id === id) : undefined;
   const reminder = reminderId ? data.reminders?.find((r) => r.id === reminderId) : undefined;
@@ -43,7 +43,7 @@ export function AddRecord({ id, reminderId, from, presetType, presetEvent, prese
 
   const [type, setType] = useState<RecordType>(existing?.type ?? reminder?.type ?? presetType ?? 'expense');
   const [expr, setExpr] = useState(existing ? String(existing.amount) : reminder?.amount ? String(reminder.amount) : '0');
-  const [categoryId, setCategoryId] = useState<string | undefined>(existing?.categoryId ?? reminder?.categoryId);
+  const [categoryId, setCategoryId] = useState<string | undefined>(existing?.categoryId ?? reminder?.categoryId ?? presetCategory ?? undefined);
   const [accountId, setAccountId] = useState(startAccount);
   const [toAccountId, setToAccountId] = useState(existing?.toAccountId ?? accounts.find((a) => a.id !== startAccount)?.id ?? '');
   const [day, setDay] = useState(toDateInput(startDate));
@@ -197,9 +197,8 @@ export function AddRecord({ id, reminderId, from, presetType, presetEvent, prese
               <Icon name="trash" />
             </button>
           )}
-          <button className="btn small save-top" style={{ background: color }} onClick={save}>
-            <Icon name="check" size={18} stroke={2.4} />
-            Save
+          <button className="btn-icon save-top" style={{ background: color }} onClick={save} aria-label={existing ? 'Save changes' : 'Save record'} title="Save">
+            <Icon name="check" size={22} stroke={2.6} />
           </button>
         </div>
       </header>
@@ -306,6 +305,12 @@ export function AddRecord({ id, reminderId, from, presetType, presetEvent, prese
         ))}
       </div>
 
+      <div className="save-bar">
+        <button className="btn block save-bottom" style={{ background: color }} onClick={save}>
+          <Icon name="check" size={20} stroke={2.4} />
+          {existing ? 'Save changes' : 'Save record'}
+        </button>
+      </div>
 
       {sheet === 'details' && (
         <Sheet title="More details (optional)" onClose={() => setSheet(null)}>

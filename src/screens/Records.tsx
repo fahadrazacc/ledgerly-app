@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react';
 import { Icon } from '../icons';
 import { useStore } from '../store';
 import { go, href } from '../router';
-import { AccountTile, BackLink, Empty, Header, Segmented, Sheet } from '../ui';
+import { AccountTile, BackLink, CatTile, Empty, Header, Segmented, Sheet } from '../ui';
 import { AccountSheet } from './Accounts';
+import { CategorySheet } from './Categories';
 import { RecordRow } from './RecordRow';
 import { addDays, addMonths, dayKey, dayLabel, inRange, money, monthLabel, startOfDay, startOfMonth, startOfWeek, toDateInput, byNewest, balanceOf } from '../utils';
 import type { Txn } from '../types';
@@ -59,9 +60,19 @@ export function periodLabel(period: Period, start: Date, end: Date) {
 }
 
 /** Records list. With `accountView`, it becomes that account's page: its balance, money in and out, and an Edit button. */
-export function Records({ account: initialAccount, accountView, back = 'home' }: { account: string | null; accountView?: string; back?: string }) {
+export function Records({
+  account: initialAccount,
+  accountView,
+  categoryView,
+  back = 'home',
+}: {
+  account: string | null;
+  accountView?: string;
+  categoryView?: string;
+  back?: string;
+}) {
   const { data, cur, update } = useStore();
-  const [period, setPeriod] = useState<Period>(accountView ? 'all' : 'month');
+  const [period, setPeriod] = useState<Period>(accountView || categoryView ? 'all' : 'month');
   const [editing, setEditing] = useState(false);
   const [anchor, setAnchor] = useState(() => new Date());
   const [custom, setCustom] = useState(() => ({ from: addDays(new Date(), -29), to: new Date() }));
@@ -69,6 +80,9 @@ export function Records({ account: initialAccount, accountView, back = 'home' }:
   const [filter, setFilter] = useState<Filter>('all');
   const [accountId, setAccountId] = useState<string>(accountView ?? initialAccount ?? 'all');
   const account = accountView ? data.accounts.find((a) => a.id === accountView) : undefined;
+  const category = categoryView ? data.categories.find((c) => c.id === categoryView) : undefined;
+  const subject = account ?? category; // set when this is one account's or one category's page
+  const selfPath = account ? `account?id=${account.id}&back=${back}` : category ? `category?id=${category.id}&back=${back}` : 'records';
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
 
@@ -81,6 +95,7 @@ export function Records({ account: initialAccount, accountView, back = 'home' }:
       .filter((t) => inRange(t.date, start, end))
       .filter((t) => filter === 'all' || t.type === filter)
       .filter((t) => accountId === 'all' || t.accountId === accountId || t.toAccountId === accountId)
+      .filter((t) => !categoryView || t.categoryId === categoryView)
       .filter((t) => {
         if (!q) return true;
         const cat = data.categories.find((c) => c.id === t.categoryId)?.name ?? '';
@@ -118,12 +133,12 @@ export function Records({ account: initialAccount, accountView, back = 'home' }:
 
   const accountsForFilter = data.accounts.filter((a) => !a.archived || a.id === accountId || data.txns.some((t) => t.accountId === a.id));
 
-  if (accountView && !account)
+  if ((accountView && !account) || (categoryView && !category))
     return (
       <main className="screen">
-        <Header title="Account" left={<BackLink to={back} />} />
+        <Header title={accountView ? 'Account' : 'Category'} left={<BackLink to={back} />} />
         <div className="card">
-          <Empty icon="bank" title="This account no longer exists" text="It may have been deleted on another device." />
+          <Empty icon={accountView ? 'bank' : 'tag'} title={`This ${accountView ? 'account' : 'category'} no longer exists`} text="It may have been deleted on another device." />
         </div>
       </main>
     );
@@ -131,11 +146,11 @@ export function Records({ account: initialAccount, accountView, back = 'home' }:
   return (
     <main className="screen">
       <header className="head">
-        {account ? (
+        {subject ? (
           <>
             <BackLink to={back} />
             <h1 className="h-small" style={{ flex: 1, textAlign: 'center', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {account.name}
+              {subject.name}
             </h1>
           </>
         ) : (
@@ -153,13 +168,15 @@ export function Records({ account: initialAccount, accountView, back = 'home' }:
           >
             <Icon name={searching ? 'close' : 'search'} />
           </button>
-          {account && (
-            <button className="btn-icon" aria-label="Edit account" title="Edit account" onClick={() => setEditing(true)}>
+          {subject && (
+            <button className="btn-icon" aria-label={account ? 'Edit account' : 'Edit category'} title={account ? 'Edit account' : 'Edit category'} onClick={() => setEditing(true)}>
               <Icon name="edit" />
             </button>
           )}
         </div>
       </header>
+
+      {category && <CategoryCard key={category.id} categoryId={category.id} total={category.type === 'income' ? income : expense} count={list.length} label={period === 'all' ? 'all time' : periodLabel(period, start, end)} />}
 
       {account && (
         <section className="dark-card" aria-label={`${account.name} balance`}>
@@ -212,7 +229,7 @@ export function Records({ account: initialAccount, accountView, back = 'home' }:
           if (p === 'custom') setCustomOpen(true);
         }}
         options={[
-          ...(account ? [{ value: 'all' as Period, label: 'All' }] : [{ value: 'day' as Period, label: 'Day' }]),
+          ...(subject ? [{ value: 'all' as Period, label: 'All' }] : [{ value: 'day' as Period, label: 'Day' }]),
           { value: 'week', label: 'Week' },
           { value: 'month', label: 'Month' },
           { value: 'year', label: 'Year' },
@@ -238,6 +255,7 @@ export function Records({ account: initialAccount, accountView, back = 'home' }:
         </div>
       )}
 
+      {!category && (
       <div className="grid2" style={{ gridTemplateColumns: account ? 'minmax(0, 1fr)' : 'minmax(0, 1.4fr) minmax(0, 1fr)', gap: 8 }}>
         <select className="input" aria-label="Type" value={filter} onChange={(e) => setFilter(e.target.value as Filter)} style={{ height: 46 }}>
           <option value="all">All types</option>
@@ -257,8 +275,9 @@ export function Records({ account: initialAccount, accountView, back = 'home' }:
         </select>
         )}
       </div>
+      )}
 
-      {!account && (
+      {!subject && (
       <div className="grid3">
         <div className="stat">
           <span className="label">{accountId === 'all' ? 'Income' : 'Money in'}</span>
@@ -278,7 +297,7 @@ export function Records({ account: initialAccount, accountView, back = 'home' }:
       {list.length > 0 && (
         <p className="list-count" aria-live="polite">
           <strong>{list.length.toLocaleString()}</strong> {list.length === 1 ? 'transaction' : 'transactions'}
-          {filter === 'all' && (
+          {filter === 'all' && !category && (
             <span className="muted">
               {[
                 ['expense', 'expense', 'expenses'],
@@ -302,7 +321,7 @@ export function Records({ account: initialAccount, accountView, back = 'home' }:
             text={query ? 'Try a different word or amount.' : 'Records you add will show up here, grouped by day.'}
             action={
               !query && (
-                <a className="btn primary small" href={href(account ? `add?account=${account.id}&from=${encodeURIComponent(`account?id=${account.id}&back=${back}`)}` : 'add?from=records')}>
+                <a className="btn primary small" href={href(account ? `add?account=${account.id}&from=${encodeURIComponent(selfPath)}` : category ? `add?category=${category.id}&type=${category.type}&from=${encodeURIComponent(selfPath)}` : 'add?from=records')}>
                   Add record
                 </a>
               )
@@ -321,7 +340,7 @@ export function Records({ account: initialAccount, accountView, back = 'home' }:
             </div>
             <div className="card list">
               {txns.map((t) => (
-                <RecordRow key={t.id} t={t} from={account ? `account?id=${account.id}&back=${back}` : 'records'} />
+                <RecordRow key={t.id} t={t} from={selfPath} />
               ))}
             </div>
           </section>
@@ -338,6 +357,20 @@ export function Records({ account: initialAccount, accountView, back = 'home' }:
           }}
           onDelete={(id) => {
             update((d) => ({ ...d, accounts: d.accounts.filter((x) => x.id !== id) }));
+            setEditing(false);
+            go(back);
+          }}
+        />
+      )}
+
+      {editing && category && (
+        <CategorySheet
+          category={category}
+          type={category.type}
+          onClose={() => setEditing(false)}
+          onSaved={() => setEditing(false)}
+          onDelete={(id) => {
+            update((d) => ({ ...d, categories: d.categories.filter((c) => c.id !== id), budgets: d.budgets.filter((b) => b.categoryId !== id) }));
             setEditing(false);
             go(back);
           }}
@@ -405,5 +438,54 @@ export function CustomRange({ value, onClose, onApply }: { value: { from: Date; 
         <button className="btn primary block">Show records</button>
       </form>
     </Sheet>
+  );
+}
+
+/** Top card on a category's page: total for the period, plus this month and the usual month. */
+function CategoryCard({ categoryId, total, count, label }: { categoryId: string; total: number; count: number; label: string }) {
+  const { data, cur } = useStore();
+  const cat = data.categories.find((c) => c.id === categoryId)!;
+  const isIncome = cat.type === 'income';
+  const sumIn = (s: Date, e: Date) => data.txns.filter((t) => t.categoryId === categoryId && inRange(t.date, s, e)).reduce((n, t) => n + t.amount, 0);
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const thisMonth = sumIn(monthStart, new Date(now.getFullYear(), now.getMonth() + 1, 1));
+  // Average over the last 12 full months, counting only from the first record in this category.
+  const first = data.txns.filter((t) => t.categoryId === categoryId).reduce((m, t) => (t.date < m ? t.date : m), now.toISOString());
+  const firstMonth = new Date(new Date(first).getFullYear(), new Date(first).getMonth(), 1);
+  const months = Math.min(12, (monthStart.getFullYear() - firstMonth.getFullYear()) * 12 + monthStart.getMonth() - firstMonth.getMonth());
+  const avg = months > 0 ? sumIn(new Date(monthStart.getFullYear(), monthStart.getMonth() - months, 1), monthStart) / months : null;
+  const tone = isIncome ? '#63e6be' : '#ffa94d';
+  return (
+    <section className="dark-card" aria-label={`${cat.name} totals`}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <CatTile cat={cat} size={36} />
+        <span className="dark-muted">
+          {isIncome ? 'Received' : 'Spent'} · {count} {count === 1 ? 'record' : 'records'}
+          {cat.archived ? ' · hidden' : ''}
+        </span>
+      </div>
+      <div className="big-num">{money(total, cur)}</div>
+      <div className="grid2">
+        <div className="mini-pill">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+            <span style={{ fontSize: 11, color: '#b4bccb' }}>This month</span>
+            <span className="cat-month" style={{ fontSize: 15, fontWeight: 700, color: tone, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{money(thisMonth, cur)}</span>
+          </div>
+        </div>
+        <div className="mini-pill">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+            <span style={{ fontSize: 11, color: '#b4bccb' }}>Monthly average</span>
+            <span className="cat-avg" style={{ fontSize: 15, fontWeight: 700, color: tone, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {avg === null ? 'Not enough data' : money(Math.round(avg), cur)}
+            </span>
+          </div>
+        </div>
+      </div>
+      <span className="dark-muted" style={{ fontSize: 12 }}>
+        Total for {label}
+        {avg !== null ? `. Average over the last ${months} full month${months === 1 ? '' : 's'}.` : ''}
+      </span>
+    </section>
   );
 }

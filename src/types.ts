@@ -53,6 +53,8 @@ export interface Budget {
   id: string;
   categoryId: string | null; // null = overall monthly budget
   limit: number;
+  /** 'YYYY-MM' when the budget is for that month only; otherwise it repeats every month. */
+  month?: string;
 }
 
 export interface Debt {

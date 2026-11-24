@@ -8,7 +8,7 @@ import { CumulativeLine, Donut, HBars, PairBars } from '../charts';
 import { RecordRow } from './RecordRow';
 import { dueLabel } from './Reminders';
 import { upcoming } from '../notify';
-import { addMonths, balanceOf, byCategory, money, monthLabel, monthShort, spentInCategory, startOfMonth, sums, totalBalance, byNewest } from '../utils';
+import { addMonths, balanceOf, byCategory, money, monthLabel, monthShort, spentInCategory, startOfMonth, sums, totalBalance, byNewest, budgetsFor } from '../utils';
 import type { AppData } from '../types';
 
 function dailyCumulative(data: AppData, start: Date) {
@@ -64,8 +64,8 @@ export function Dashboard() {
   const cumPrev = dailyCumulative(data, prevStart);
   const days = Math.max(cumNow.length, cumPrev.length);
 
-  const overall = data.budgets.find((b) => b.categoryId === null);
-  const catBudgets = data.budgets
+  const overall = budgetsFor(data, start).find((b) => b.categoryId === null);
+  const catBudgets = budgetsFor(data, start)
     .filter((b) => b.categoryId)
     .map((b) => ({ b, cat: data.categories.find((c) => c.id === b.categoryId), spent: spentInCategory(data, b.categoryId, start, end) }))
     .filter((x) => x.cat)
@@ -174,14 +174,27 @@ export function Dashboard() {
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
               <Donut slices={slices} total={m.expense} label="Spent" cur={cur} size={170} />
               <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {slices.map((s) => (
-                  <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+                {slices.map((s) => {
+                  const id = top.find((c) => c.category.name === s.label)?.category.id;
+                  const style = { display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--ink)', textDecoration: 'none' } as const;
+                  const inner = (
+                    <>
                     <span style={{ width: 10, height: 10, borderRadius: 3, background: s.color, flexShrink: 0 }} />
                     <span style={{ flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.label}</span>
                     <span className="muted">{m.expense ? Math.round((s.value / m.expense) * 100) : 0}%</span>
                     <strong style={{ minWidth: 86, textAlign: 'right' }}>{money(s.value, cur)}</strong>
-                  </div>
-                ))}
+                    </>
+                  );
+                  return id ? (
+                    <a key={s.label} href={href(`category?id=${id}&back=home`)} style={style}>
+                      {inner}
+                    </a>
+                  ) : (
+                    <div key={s.label} style={style}>
+                      {inner}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ) : (

@@ -83,8 +83,13 @@ function Shell() {
       screen = <Records key={'acc-' + id} account={null} accountView={id} back={back} />;
       break;
     }
+    case 'category': {
+      const id = params.get('id') ?? '';
+      screen = <Records key={'cat-' + id} account={null} categoryView={id} back={params.get('back') || 'categories'} />;
+      break;
+    }
     case 'add':
-      screen = <AddRecord key={(params.get('id') ?? '') + (params.get('reminder') ?? '')} id={params.get('id')} reminderId={params.get('reminder')} from={params.get('from') || 'home'} presetType={params.get('type') as RecordType | null} presetEvent={params.get('event')} presetAccount={params.get('account')} />;
+      screen = <AddRecord key={(params.get('id') ?? '') + (params.get('reminder') ?? '')} id={params.get('id')} reminderId={params.get('reminder')} from={params.get('from') || 'home'} presetType={params.get('type') as RecordType | null} presetEvent={params.get('event')} presetAccount={params.get('account')} presetCategory={params.get('category')} />;
       break;
     case 'reports':
       screen = <Reports />;
@@ -119,7 +124,7 @@ function Shell() {
       screen = wide ? <Dashboard /> : <Home />;
   }
 
-  const active = wide ? (path === 'profile' ? 'settings' : path === 'event' ? 'events' : path === 'insights' ? 'analysis' : path === 'account' ? 'accounts' : path) : ['accounts', 'account', 'settings', 'profile', 'categories', 'reminders', 'events', 'event', 'insights', 'analysis'].includes(path) ? 'home' : path;
+  const active = wide ? (path === 'profile' ? 'settings' : path === 'event' ? 'events' : path === 'insights' ? 'analysis' : path === 'account' ? 'accounts' : path === 'category' ? 'categories' : path) : ['accounts', 'account', 'category', 'settings', 'profile', 'categories', 'reminders', 'events', 'event', 'insights', 'analysis'].includes(path) ? 'home' : path;
   const navItem = (n: (typeof NAV)[number]) => (
     <a key={n.path} className={`item ${active === n.path ? 'on' : ''}`} href={href(n.path)} aria-current={active === n.path ? 'page' : undefined}>
       <Icon name={n.icon} size={22} stroke={1.9} />

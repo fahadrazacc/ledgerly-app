@@ -1,7 +1,7 @@
 // Smart insights computed on the device: no AI service needed.
 import type { AppData } from './types';
 import type { IconName } from './icons';
-import { addDays, addMonths, byCategory, inRange, money, spentInCategory, startOfDay, startOfMonth, sums } from './utils';
+import { addDays, addMonths, byCategory, inRange, money, spentInCategory, startOfDay, startOfMonth, sums, budgetsFor } from './utils';
 
 export interface Insight {
   id: string;
@@ -24,7 +24,7 @@ export function forecast(data: AppData, now = new Date()) {
   const projected = Math.round(spent + pace * (daysInMonth - day));
   const lastStart = addMonths(start, -1);
   const lastTotal = spentInCategory(data, null, lastStart, start);
-  const budget = data.budgets.find((b) => b.categoryId === null)?.limit;
+  const budget = budgetsFor(data, start).find((b) => b.categoryId === null)?.limit;
   return { spent, projected, pace, daysLeft: daysInMonth - day, daysInMonth, lastTotal, budget };
 }
 
@@ -84,7 +84,7 @@ export function computeInsights(data: AppData, now = new Date()): Insight[] {
   }
 
   // 4. budgets at risk
-  for (const b of data.budgets.filter((x) => x.categoryId)) {
+  for (const b of budgetsFor(data, start).filter((x) => x.categoryId)) {
     const spent = spentInCategory(data, b.categoryId, start, end);
     const proj = (spent / Math.max(1, day)) * f.daysInMonth;
     const cat = data.categories.find((c) => c.id === b.categoryId);

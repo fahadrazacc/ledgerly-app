@@ -2,7 +2,7 @@
 // debt due dates and budget alerts. Everything is scheduled on the phone; nothing is sent anywhere.
 import { Capacitor } from '@capacitor/core';
 import type { AppData, NotifySettings, Reminder, Repeat } from './types';
-import { addMonths, money, spentInCategory, startOfMonth } from './utils';
+import { addMonths, money, spentInCategory, startOfMonth, budgetsFor } from './utils';
 import { go } from './router';
 
 export const DEFAULT_NOTIFY: NotifySettings = { daily: false, dailyTime: '21:00', payments: true, budgets: true, debts: true };
@@ -123,7 +123,7 @@ export function budgetAlert(before: AppData, after: AppData, categoryId?: string
   const start = startOfMonth(new Date());
   const end = addMonths(start, 1);
   const msgs: string[] = [];
-  for (const b of after.budgets) {
+  for (const b of budgetsFor(after, start)) {
     if (b.categoryId !== null && b.categoryId !== categoryId) continue;
     const was = spentInCategory(before, b.categoryId, start, end) / b.limit;
     const now = spentInCategory(after, b.categoryId, start, end) / b.limit;

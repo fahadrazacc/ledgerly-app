@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { href } from '../router';
 import { ask } from '../confirm';
 import { Icon, type IconName } from '../icons';
 import { useStore } from '../store';
@@ -17,21 +18,52 @@ export function Categories() {
   const { data, update } = useStore();
   const [type, setType] = useState<'expense' | 'income'>('expense');
   const [editing, setEditing] = useState<Category | 'new' | null>(null);
+  const [reorder, setReorder] = useState(false);
   const list = data.categories.filter((c) => c.type === type);
   const active = list.filter((c) => !c.archived);
   const hidden = list.filter((c) => c.archived);
   const counts = new Map<string, number>();
   data.txns.forEach((t) => t.categoryId && counts.set(t.categoryId, (counts.get(t.categoryId) ?? 0) + 1));
 
+  // Swap with the next visible category of the same type; this order is used when adding records.
+  const move = (c: Category, dir: -1 | 1) =>
+    update((d) => {
+      const all = [...d.categories];
+      const peers = all.filter((x) => x.type === c.type && !x.archived);
+      const other = peers[peers.findIndex((x) => x.id === c.id) + dir];
+      if (!other) return d;
+      const ia = all.findIndex((x) => x.id === c.id);
+      const ib = all.findIndex((x) => x.id === other.id);
+      [all[ia], all[ib]] = [all[ib], all[ia]];
+      return { ...d, categories: all };
+    });
+
+  const reorderRow = (c: Category, i: number) => (
+    <div key={c.id} className="acc-row">
+      <div className="row">
+        <CatTile cat={c} />
+        <span className="row-main">
+          <span className="row-title">{c.name}</span>
+        </span>
+      </div>
+      <button className="btn-icon" aria-label={`Move ${c.name} up`} disabled={i === 0} onClick={() => move(c, -1)} style={i === 0 ? { opacity: 0.35 } : undefined}>
+        <Icon name="chevD" size={20} stroke={2.2} />
+      </button>
+      <button className="btn-icon" aria-label={`Move ${c.name} down`} disabled={i === active.length - 1} onClick={() => move(c, 1)} style={i === active.length - 1 ? { opacity: 0.35 } : undefined}>
+        <Icon name="chevD" size={20} stroke={2.2} />
+      </button>
+    </div>
+  );
+
   const row = (c: Category) => (
-    <button key={c.id} className="row" onClick={() => setEditing(c)}>
+    <a key={c.id} className="row" href={href(`category?id=${c.id}&back=categories`)}>
       <CatTile cat={c} />
       <span className="row-main">
         <span className="row-title">{c.name}</span>
         <span className="row-sub">{counts.get(c.id) ? `${counts.get(c.id)} records` : 'No records yet'}</span>
       </span>
-      <Icon name="edit" size={18} />
-    </button>
+      <Icon name="chevR" size={18} />
+    </a>
   );
 
   return (
@@ -54,8 +86,18 @@ export function Categories() {
           { value: 'income', label: 'Income' },
         ]}
       />
-      <div className="card list">{active.length ? active.map(row) : <Empty icon="tag" title="No categories" text="Tap + to add one." />}</div>
-      {hidden.length > 0 && (
+      <div className="section-head">
+        <p className="muted small" style={{ margin: 0 }}>
+          {reorder ? 'Use the arrows to set the order. It’s the order you’ll see when adding a record.' : 'Tap a category to see its records.'}
+        </p>
+        {active.length > 1 && (
+          <button className="link" onClick={() => setReorder((r) => !r)} aria-pressed={reorder}>
+            {reorder ? 'Done' : 'Reorder'}
+          </button>
+        )}
+      </div>
+      <div className="card list">{active.length ? (reorder ? active.map(reorderRow) : active.map(row)) : <Empty icon="tag" title="No categories" text="Tap + to add one." />}</div>
+      {hidden.length > 0 && !reorder && (
         <section className="section">
           <h2 className="h2">Hidden</h2>
           <p className="muted small" style={{ margin: 0 }}>

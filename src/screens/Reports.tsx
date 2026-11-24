@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { href } from '../router';
 import { Icon } from '../icons';
 import { useStore } from '../store';
 import { CatTile, Empty, Progress, Segmented } from '../ui';
@@ -148,7 +149,7 @@ export function Reports() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {cats.map((c) => (
-                <div key={c.category.id} className="row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
+                <a key={c.category.id} className="row" href={href(`category?id=${c.category.id}&back=reports`)} style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <CatTile cat={c.category} size={36} />
                     <span className="row-main">
@@ -158,7 +159,7 @@ export function Reports() {
                     <span className="amt">{money(c.amount, cur)}</span>
                   </div>
                   <Progress pct={(c.amount / cats[0].amount) * 100} color={c.category.color} />
-                </div>
+                </a>
               ))}
             </div>
           </>
