@@ -50,11 +50,23 @@ export const byNewest = (a: { date: string; createdAt: number }, b: { date: stri
 
 export const monthKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 
-/** Budgets that apply in the month starting at `start`. A one-month budget replaces the repeating one for the same category. */
+/** The month's total income, which is its overall budget. */
+export function monthIncome(data: AppData, start: Date) {
+  const end = new Date(start.getFullYear(), start.getMonth() + 1, 1);
+  return data.txns.filter((t) => t.type === 'income' && inRange(t.date, start, end)).reduce((s, t) => s + t.amount, 0);
+}
+
+/**
+ * Budgets that apply in the month starting at `start`.
+ * The overall budget is always that month's income (none until income is added);
+ * a one-month category budget replaces the repeating one for the same category.
+ */
 export function budgetsFor(data: AppData, start: Date): Budget[] {
   const key = monthKey(start);
-  const active = data.budgets.filter((b) => !b.month || b.month === key);
-  return active.filter((b) => b.month || !active.some((o) => o.month && o.categoryId === b.categoryId));
+  const active = data.budgets.filter((b) => b.categoryId !== null && (!b.month || b.month === key));
+  const cats = active.filter((b) => b.month || !active.some((o) => o.month && o.categoryId === b.categoryId));
+  const income = monthIncome(data, start);
+  return income > 0 ? [{ id: 'income', categoryId: null, limit: income }, ...cats] : cats;
 }
 
 export function inRange(iso: string, start: Date, end: Date) {

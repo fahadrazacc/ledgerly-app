@@ -355,7 +355,7 @@ export function AccountSheet(props: { account: Account | null; onClose: () => vo
         <button className="btn primary block">Save account</button>
 
         {a && !used && (
-          <button type="button" className="btn danger block" onClick={async () => (await ask('Delete this account?')) && props.onDelete(a.id)}>
+          <button type="button" className="btn danger block" onClick={async () => (await ask('Delete this account?', { verify: true })) && props.onDelete(a.id)}>
             <Icon name="trash" size={18} />
             Delete account
           </button>

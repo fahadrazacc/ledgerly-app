@@ -206,7 +206,7 @@ export function CategorySheet(props: { category: Category | null; type: 'expense
           </button>
         )}
         {c && !used && props.onDelete && (
-          <button type="button" className="btn danger block" onClick={async () => (await ask(`Delete "${c.name}"?`)) && props.onDelete!(c.id)}>
+          <button type="button" className="btn danger block" onClick={async () => (await ask(`Delete "${c.name}"?`, { verify: true })) && props.onDelete!(c.id)}>
             <Icon name="trash" size={18} />
             Delete category
           </button>

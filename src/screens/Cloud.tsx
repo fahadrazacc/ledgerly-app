@@ -295,7 +295,7 @@ export function CloudSection() {
           <button
             className="row"
             onClick={async () => {
-              if (await ask('Delete your data from the cloud? Data on this and other devices stays, but stops syncing until it is uploaded again.', { ok: 'Delete cloud copy' })) {
+              if (await ask('Delete your data from the cloud? Data on this and other devices stays, but stops syncing until it is uploaded again.', { ok: 'Delete cloud copy', verify: true })) {
                 await deleteCloudData();
                 toast('Cloud copy deleted');
               }
@@ -388,7 +388,7 @@ export function DriveRows({ onRestored }: { onRestored: () => void }) {
                   key={f.id}
                   className="row"
                   onClick={async () => {
-                    if (!(await ask(`Restore the backup from ${new Date(f.createdTime).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' })}? It replaces the data on this device.`, { ok: 'Restore' }))) return;
+                    if (!(await ask(`Restore the backup from ${new Date(f.createdTime).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' })}? It replaces the data on this device.`, { ok: 'Restore', verify: true }))) return;
                     try {
                       importBackup(await downloadDriveBackup(f.id));
                       setFiles(null);

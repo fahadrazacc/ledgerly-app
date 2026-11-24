@@ -377,6 +377,7 @@ button[aria-label$=" up"] svg { transform: rotate(180deg); }
 .pace-legend { display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; }
 .analysis-grid { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 900px) { .analysis-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } }
+.analysis-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .analysis .panel { display: flex; flex-direction: column; gap: 14px; }
 .cmp { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .cmp > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
@@ -400,3 +401,11 @@ button[aria-label$=" up"] svg { transform: rotate(180deg); }
 .check-row > span { display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
 .check-row .muted { font-size: 12px; }
 a.cat-row { color: inherit; text-decoration: none; }
+
+.dash-accounts { display: flex; flex-direction: column; gap: 10px; }
+.acc-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.acc-tile { display: flex; align-items: center; gap: 12px; padding: 16px 18px; text-decoration: none; color: var(--ink); }
+.acc-tile:hover { box-shadow: 0 0 0 2px var(--accent-soft); }
+.acc-tile-bal { font-size: 18px; font-weight: 800; letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.acc-tile > svg { color: var(--muted); flex: none; }
+.report-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }

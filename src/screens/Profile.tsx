@@ -423,7 +423,7 @@ export function Profile() {
             const f = e.target.files?.[0];
             e.target.value = '';
             if (!f) return;
-            if (!(await ask('Replace all data on this device with this backup? You will need the PIN or password that was used for the backup.', { ok: 'Restore' }))) return;
+            if (!(await ask('Replace all data on this device with this backup? You will need the PIN or password that was used for the backup.', { ok: 'Restore', verify: true }))) return;
             try {
               importBackup(await f.text());
               lock();
@@ -449,7 +449,7 @@ export function Profile() {
           <button
             className="row"
             onClick={async () => {
-              if ((await ask('Erase ALL data on this device and start over? This cannot be undone.', { ok: 'Continue' })) && (await ask('Last check: save a backup first if you might need it. Erase everything now?', { ok: 'Erase' }))) {
+              if (await ask('Erase ALL data on this device and start over? This cannot be undone, so save a backup first if you might need it.', { ok: 'Erase everything', verify: true })) {
                 wipeVault();
                 await disableBiometric();
                 lock();
@@ -584,7 +584,7 @@ function ClearDataSheet({ onClose }: { onClose: () => void }) {
         style={{ background: 'var(--exp)', color: '#fff' }}
         disabled={!any}
         onClick={async () => {
-          if (!(await ask('Clear the selected data? This cannot be undone.', { ok: 'Clear' }))) return;
+          if (!(await ask('Clear the selected data? This cannot be undone.', { ok: 'Clear', verify: true }))) return;
           update((d) => {
             let next: AppData = { ...d };
             if (eff.records) next.txns = [];

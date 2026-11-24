@@ -1,4 +1,5 @@
 import { ask } from '../confirm';
+import { href } from '../router';
 import { useState } from 'react';
 import { Icon } from '../icons';
 import { useStore } from '../store';
@@ -37,7 +38,7 @@ export function Budgets() {
       </header>
 
       {overall ? (
-        <button className="card" style={{ display: 'flex', alignItems: 'center', gap: 18, border: 0, textAlign: 'left' }} onClick={() => setEditing(overall)}>
+        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
           <div style={{ position: 'relative', width: 104, height: 104, flexShrink: 0 }}>
             <svg role="img" aria-label={`${Math.round(oPct)}% of monthly budget used`} width="104" height="104" viewBox="0 0 104 104" style={{ transform: 'rotate(-90deg)' }}>
               <circle cx="52" cy="52" r="44" fill="none" stroke="var(--line)" strokeWidth="12" />
@@ -52,8 +53,7 @@ export function Budgets() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
             <span className="muted" style={{ fontSize: 13, fontWeight: 600 }}>
-              {monthLabel(start)}
-              {overall.month ? ' only' : ''}
+              {monthLabel(start)} · from your income
             </span>
             {oLeft >= 0 ? (
               <span style={{ fontSize: 22, fontWeight: 800 }}>
@@ -68,7 +68,7 @@ export function Budgets() {
               </span>
             )}
             <span className="muted small">
-              {money(oSpent, cur)} spent of {money(overall.limit, cur)}
+              {money(oSpent, cur)} spent of {money(overall.limit, cur)} income
             </span>
             {oLeft > 0 && (
               <span className="small inc" style={{ fontWeight: 600 }}>
@@ -76,17 +76,17 @@ export function Budgets() {
               </span>
             )}
           </div>
-        </button>
+        </div>
       ) : (
         <div className="card">
           <Empty
             icon="target"
-            title="No monthly budget yet"
-            text="Set one total limit for the month, then add limits for the categories you want to watch."
+            title="No income this month yet"
+            text={`Your monthly budget is the income you add for ${monthLabel(start)}. Add your salary or other income to see how much you can spend.`}
             action={
-              <button className="btn primary small" onClick={() => setEditing({ id: '', categoryId: null, limit: 0 })}>
-                Set monthly budget
-              </button>
+              <a className="btn primary small" href={href('add?type=income&from=budgets')}>
+                Add income
+              </a>
             }
           />
         </div>
@@ -154,7 +154,6 @@ function BudgetSheet(props: { budget: Budget | null; onClose: () => void; onSave
   // A category can have one repeating budget and one for this month only.
   const used = new Set(data.budgets.filter((b) => b.id !== existing?.id && (once ? b.month === thisMonth : !b.month)).map((b) => b.categoryId ?? 'overall'));
   const options = [
-    ...(used.has('overall') ? [] : [{ value: 'overall', label: 'Whole month (all spending)' }]),
     ...data.categories.filter((c) => c.type === 'expense' && !c.archived && !used.has(c.id)).map((c) => ({ value: c.id, label: c.name })),
   ];
   const [picked, setScope] = useState(props.budget ? props.budget.categoryId ?? 'overall' : options[0]?.value ?? '');

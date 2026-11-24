@@ -110,7 +110,6 @@ export function sampleData(name: string, currency: string): AppData {
   }
 
   const budgets: Budget[] = [
-    { id: uid(), categoryId: null, limit: round(150000) },
     { id: uid(), categoryId: c('Food & Dining'), limit: round(15000) },
     { id: uid(), categoryId: c('Shopping'), limit: round(15000) },
     { id: uid(), categoryId: c('Transport'), limit: round(9000) },
