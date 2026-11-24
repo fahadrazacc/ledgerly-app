@@ -24,7 +24,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
 const timeOf = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 const KEYS = ['1', '2', '3', '÷', '4', '5', '6', '×', '7', '8', '9', '−', '.', '0', 'back', '+', 'C', '='];
 
-export function AddRecord({ id, reminderId, from, presetType, presetEvent }: { id: string | null; reminderId: string | null; from: string; presetType: RecordType | null; presetEvent?: string | null }) {
+export function AddRecord({ id, reminderId, from, presetType, presetEvent, presetAccount }: { id: string | null; reminderId: string | null; from: string; presetType: RecordType | null; presetEvent?: string | null; presetAccount?: string | null }) {
   const { data, update, cur } = useStore();
   const existing = id ? data.txns.find((t) => t.id === id) : undefined;
   const reminder = reminderId ? data.reminders?.find((r) => r.id === reminderId) : undefined;
@@ -34,6 +34,7 @@ export function AddRecord({ id, reminderId, from, presetType, presetEvent }: { i
 
   const startAccount =
     existing?.accountId ??
+    (presetAccount && accounts.some((a) => a.id === presetAccount) ? presetAccount : undefined) ??
     (reminder?.accountId && accounts.some((a) => a.id === reminder.accountId) ? reminder.accountId : undefined) ??
     (accounts.some((a) => a.id === lastUsedAccount) ? lastUsedAccount : undefined) ??
     accounts[0]?.id ??

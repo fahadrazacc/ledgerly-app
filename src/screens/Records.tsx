@@ -1,19 +1,22 @@
 import { useMemo, useState } from 'react';
 import { Icon } from '../icons';
 import { useStore } from '../store';
-import { href } from '../router';
-import { Empty, Segmented, Sheet } from '../ui';
+import { go, href } from '../router';
+import { AccountTile, BackLink, Empty, Header, Segmented, Sheet } from '../ui';
+import { AccountSheet } from './Accounts';
 import { RecordRow } from './RecordRow';
-import { addDays, addMonths, dayKey, dayLabel, inRange, money, monthLabel, startOfDay, startOfMonth, startOfWeek, toDateInput, byNewest } from '../utils';
+import { addDays, addMonths, dayKey, dayLabel, inRange, money, monthLabel, startOfDay, startOfMonth, startOfWeek, toDateInput, byNewest, balanceOf } from '../utils';
 import type { Txn } from '../types';
 
 type Filter = 'all' | 'expense' | 'income' | 'transfer';
-export type Period = 'day' | 'week' | 'month' | 'year' | 'custom';
+export type Period = 'all' | 'day' | 'week' | 'month' | 'year' | 'custom';
 
 const fmt = (d: Date, year = false) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', ...(year ? { year: 'numeric' } : {}) });
 
 export function periodRange(period: Period, anchor: Date, custom: { from: Date; to: Date }) {
   switch (period) {
+    case 'all':
+      return { start: new Date(0), end: new Date(8.64e15) };
     case 'day': {
       const s = startOfDay(anchor);
       return { start: s, end: addDays(s, 1) };
@@ -55,14 +58,17 @@ export function periodLabel(period: Period, start: Date, end: Date) {
   return `${fmt(start, !sameYear)} – ${fmt(last, true)}`;
 }
 
-export function Records({ account: initialAccount }: { account: string | null }) {
-  const { data, cur } = useStore();
-  const [period, setPeriod] = useState<Period>('month');
+/** Records list. With `accountView`, it becomes that account's page: its balance, money in and out, and an Edit button. */
+export function Records({ account: initialAccount, accountView, back = 'home' }: { account: string | null; accountView?: string; back?: string }) {
+  const { data, cur, update } = useStore();
+  const [period, setPeriod] = useState<Period>(accountView ? 'all' : 'month');
+  const [editing, setEditing] = useState(false);
   const [anchor, setAnchor] = useState(() => new Date());
   const [custom, setCustom] = useState(() => ({ from: addDays(new Date(), -29), to: new Date() }));
   const [customOpen, setCustomOpen] = useState(false);
   const [filter, setFilter] = useState<Filter>('all');
-  const [accountId, setAccountId] = useState<string>(initialAccount ?? 'all');
+  const [accountId, setAccountId] = useState<string>(accountView ?? initialAccount ?? 'all');
+  const account = accountView ? data.accounts.find((a) => a.id === accountView) : undefined;
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
 
@@ -96,6 +102,10 @@ export function Records({ account: initialAccount }: { account: string | null })
     }
   }
 
+  /** What a record does to the list's total: transfers count only when viewing one account. */
+  const effect = (t: Txn) =>
+    t.type === 'income' ? t.amount : t.type === 'expense' ? -t.amount : accountId === 'all' ? 0 : (t.toAccountId === accountId ? t.amount : 0) - (t.accountId === accountId ? t.amount : 0);
+
   const groups = useMemo(() => {
     const m = new Map<string, Txn[]>();
     for (const t of list) {
@@ -108,10 +118,29 @@ export function Records({ account: initialAccount }: { account: string | null })
 
   const accountsForFilter = data.accounts.filter((a) => !a.archived || a.id === accountId || data.txns.some((t) => t.accountId === a.id));
 
+  if (accountView && !account)
+    return (
+      <main className="screen">
+        <Header title="Account" left={<BackLink to={back} />} />
+        <div className="card">
+          <Empty icon="bank" title="This account no longer exists" text="It may have been deleted on another device." />
+        </div>
+      </main>
+    );
+
   return (
     <main className="screen">
       <header className="head">
-        <h1 className="h-big">Records</h1>
+        {account ? (
+          <>
+            <BackLink to={back} />
+            <h1 className="h-small" style={{ flex: 1, textAlign: 'center', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {account.name}
+            </h1>
+          </>
+        ) : (
+          <h1 className="h-big">Records</h1>
+        )}
         <div className="head-actions">
           <button
             className="btn-icon"
@@ -124,8 +153,48 @@ export function Records({ account: initialAccount }: { account: string | null })
           >
             <Icon name={searching ? 'close' : 'search'} />
           </button>
+          {account && (
+            <button className="btn-icon" aria-label="Edit account" title="Edit account" onClick={() => setEditing(true)}>
+              <Icon name="edit" />
+            </button>
+          )}
         </div>
       </header>
+
+      {account && (
+        <section className="dark-card" aria-label={`${account.name} balance`}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <AccountTile account={account} size={36} />
+            <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+              <span className="dark-muted">Balance{account.archived ? ' · inactive' : ''}</span>
+            </span>
+          </div>
+          <div className="big-num">{money(balanceOf(data, account.id), cur)}</div>
+          <div className="grid2">
+            <div className="mini-pill">
+              <span className="tile" style={{ width: 34, height: 34, borderRadius: 11, background: '#12352d', color: '#63e6be' }}>
+                <Icon name="arrowDL" size={18} stroke={2} />
+              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                <span style={{ fontSize: 11, color: '#b4bccb' }}>Incoming</span>
+                <span className="acc-in" style={{ fontSize: 15, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: '#63e6be' }}>{money(income, cur)}</span>
+              </div>
+            </div>
+            <div className="mini-pill">
+              <span className="tile" style={{ width: 34, height: 34, borderRadius: 11, background: '#3b2516', color: '#ffa94d' }}>
+                <Icon name="arrowUR" size={18} stroke={2} />
+              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                <span style={{ fontSize: 11, color: '#b4bccb' }}>Outgoing</span>
+                <span className="acc-out" style={{ fontSize: 15, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: '#ffa94d' }}>{money(expense, cur)}</span>
+              </div>
+            </div>
+          </div>
+          <span className="dark-muted" style={{ fontSize: 12 }}>
+            {period === 'all' ? 'Totals for all time, including transfers' : `Totals for ${periodLabel(period, start, end)}, including transfers`}
+          </span>
+        </section>
+      )}
 
       {searching && (
         <label className="search">
@@ -143,7 +212,7 @@ export function Records({ account: initialAccount }: { account: string | null })
           if (p === 'custom') setCustomOpen(true);
         }}
         options={[
-          { value: 'day', label: 'Day' },
+          ...(account ? [{ value: 'all' as Period, label: 'All' }] : [{ value: 'day' as Period, label: 'Day' }]),
           { value: 'week', label: 'Week' },
           { value: 'month', label: 'Month' },
           { value: 'year', label: 'Year' },
@@ -151,7 +220,7 @@ export function Records({ account: initialAccount }: { account: string | null })
         ]}
       />
 
-      {period === 'custom' ? (
+      {period === 'all' ? null : period === 'custom' ? (
         <button className="month-nav" style={{ border: 0, justifyContent: 'center', gap: 10, height: 52 }} onClick={() => setCustomOpen(true)}>
           <Icon name="calendar" size={18} />
           <span>{periodLabel(period, start, end)}</span>
@@ -169,13 +238,14 @@ export function Records({ account: initialAccount }: { account: string | null })
         </div>
       )}
 
-      <div className="grid2" style={{ gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr)', gap: 8 }}>
+      <div className="grid2" style={{ gridTemplateColumns: account ? 'minmax(0, 1fr)' : 'minmax(0, 1.4fr) minmax(0, 1fr)', gap: 8 }}>
         <select className="input" aria-label="Type" value={filter} onChange={(e) => setFilter(e.target.value as Filter)} style={{ height: 46 }}>
           <option value="all">All types</option>
           <option value="expense">Expenses</option>
           <option value="income">Income</option>
           <option value="transfer">Transfers</option>
         </select>
+        {!account && (
         <select className="input" aria-label="Account" value={accountId} onChange={(e) => setAccountId(e.target.value)} style={{ height: 46 }}>
           <option value="all">All accounts</option>
           {accountsForFilter.map((a) => (
@@ -185,8 +255,10 @@ export function Records({ account: initialAccount }: { account: string | null })
             </option>
           ))}
         </select>
+        )}
       </div>
 
+      {!account && (
       <div className="grid3">
         <div className="stat">
           <span className="label">{accountId === 'all' ? 'Income' : 'Money in'}</span>
@@ -201,6 +273,7 @@ export function Records({ account: initialAccount }: { account: string | null })
           <span className="value">{money(income - expense, cur, true)}</span>
         </div>
       </div>
+      )}
 
       {list.length > 0 && (
         <p className="list-count" aria-live="polite">
@@ -229,7 +302,7 @@ export function Records({ account: initialAccount }: { account: string | null })
             text={query ? 'Try a different word or amount.' : 'Records you add will show up here, grouped by day.'}
             action={
               !query && (
-                <a className="btn primary small" href={href('add?from=records')}>
+                <a className="btn primary small" href={href(account ? `add?account=${account.id}&from=${encodeURIComponent(`account?id=${account.id}&back=${back}`)}` : 'add?from=records')}>
                   Add record
                 </a>
               )
@@ -239,7 +312,7 @@ export function Records({ account: initialAccount }: { account: string | null })
       )}
 
       {groups.map(([day, txns]) => {
-        const net = txns.reduce((s, t) => s + (t.type === 'income' ? t.amount : t.type === 'expense' ? -t.amount : 0), 0);
+        const net = txns.reduce((s, t) => s + effect(t), 0);
         return (
           <section key={day} className="section" style={{ gap: 8 }}>
             <div className="day-head">
@@ -248,12 +321,28 @@ export function Records({ account: initialAccount }: { account: string | null })
             </div>
             <div className="card list">
               {txns.map((t) => (
-                <RecordRow key={t.id} t={t} from="records" />
+                <RecordRow key={t.id} t={t} from={account ? `account?id=${account.id}&back=${back}` : 'records'} />
               ))}
             </div>
           </section>
         );
       })}
+
+      {editing && account && (
+        <AccountSheet
+          account={account}
+          onClose={() => setEditing(false)}
+          onSave={(a) => {
+            update((d) => ({ ...d, accounts: d.accounts.map((x) => (x.id === a.id ? a : x)) }));
+            setEditing(false);
+          }}
+          onDelete={(id) => {
+            update((d) => ({ ...d, accounts: d.accounts.filter((x) => x.id !== id) }));
+            setEditing(false);
+            go(back);
+          }}
+        />
+      )}
 
       {customOpen && (
         <CustomRange

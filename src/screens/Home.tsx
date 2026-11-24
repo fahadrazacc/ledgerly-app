@@ -136,7 +136,7 @@ export function Home() {
             </div>
             <div className="acc-strip">
               {accounts.map((a) => (
-                <a key={a.id} className="acc-card" href={href('accounts')}>
+                <a key={a.id} className="acc-card" href={href(`account?id=${a.id}&back=home`)} aria-label={`${a.name} account`}>
                   <AccountTile account={a} size={32} />
                   <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
                     <span className="muted small" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

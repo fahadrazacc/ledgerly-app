@@ -68,7 +68,7 @@ export function Accounts() {
 
   const accountRow = (a: Account) => (
     <div key={a.id} className="acc-row" style={a.archived ? { opacity: 0.6 } : undefined}>
-      <button className="row" onClick={() => setAcc(a)}>
+      <a className="row" href={href(`account?id=${a.id}&back=accounts`)}>
         <AccountTile account={a} size={42} />
         <span className="row-main">
           <span className="row-title" style={{ fontWeight: 700 }}>
@@ -78,7 +78,8 @@ export function Accounts() {
             {money(balanceOf(data, a.id), cur)} · {a.archived ? 'Inactive' : accountKindLabel[a.kind]}
           </span>
         </span>
-      </button>
+        <Icon name="chevR" />
+      </a>
       <label className="switch" title={a.archived ? 'Activate' : 'Deactivate'}>
         <input type="checkbox" aria-label={`${a.name} active`} checked={!a.archived} onChange={(e) => setActive(a, e.target.checked)} />
         <span />
@@ -228,7 +229,7 @@ export function Accounts() {
   );
 }
 
-function AccountSheet(props: { account: Account | null; onClose: () => void; onSave: (a: Account) => void; onDelete: (id: string) => void }) {
+export function AccountSheet(props: { account: Account | null; onClose: () => void; onSave: (a: Account) => void; onDelete: (id: string) => void }) {
   const { data, cur } = useStore();
   const a = props.account;
   const [name, setName] = useState(a?.name ?? '');
@@ -352,12 +353,7 @@ function AccountSheet(props: { account: Account | null; onClose: () => void; onS
         </div>
         {error && <div className="error" role="alert">{error}</div>}
         <button className="btn primary block">Save account</button>
-        {a && used && (
-          <a className="btn secondary block" href={href(`records?account=${a.id}`)}>
-            <Icon name="list" size={18} />
-            View this account's records
-          </a>
-        )}
+
         {a && !used && (
           <button type="button" className="btn danger block" onClick={async () => (await ask('Delete this account?')) && props.onDelete(a.id)}>
             <Icon name="trash" size={18} />

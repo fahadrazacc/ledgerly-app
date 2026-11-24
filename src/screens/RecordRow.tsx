@@ -21,7 +21,7 @@ export function RecordRow({ t, from }: { t: Txn; from: string; showTime?: boolea
   const sub = isTransfer ? `${acc?.name ?? '?'} → ${to?.name ?? '?'}` : `${cat?.name ?? 'Uncategorised'} · ${acc?.name ?? '?'}`;
   const amount = t.type === 'income' ? t.amount : -t.amount;
   return (
-    <a className="row" href={href(`add?id=${t.id}&from=${from}`)}>
+    <a className="row" href={href(`add?id=${t.id}&from=${encodeURIComponent(from)}`)}>
       {isTransfer ? <IconTile icon="transfer" color="#3B5BDB" /> : <CatTile cat={cat} />}
       <span className="row-main">
         <span className="row-title">{title}</span>
